@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SportsLeague.API/SistemaRestaurante.API.csproj" />
+  <Project Path="SportsLeague.DataAccess/SistemaRestaurante.DataAccess.csproj" />
+  <Project Path="SportsLeague.Domain/SistemaRestaurante.Domain.csproj" />
+</Solution>
