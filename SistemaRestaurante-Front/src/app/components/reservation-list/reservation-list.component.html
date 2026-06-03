@@ -1,0 +1,42 @@
+<div class="mb-4">
+  <h2 class="fw-bold text-dark"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Panel de Control de Mesas</h2>
+  <p class="text-muted">Estado actual de los módulos y capacidades físicas sincronizadas desde el sistema central.</p>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th class="ps-4">ID de Mesa (BD)</th>
+          <th>Identificador / Número</th>
+          <th>Capacidad de Comensales</th>
+          <th>Estado del Módulo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mesa of listaMesas">
+          <td class="ps-4 fw-bold text-primary">#{{ mesa.id || mesa['id'] }}</td>
+          <td class="fw-semibold">Mesa Física {{ mesa.number || mesa['number'] }}</td>
+          <td>
+            <span class="badge bg-light text-dark border p-2">
+              <i class="bi bi-people-fill me-1 text-secondary"></i> 
+              {{ mesa.capacity || mesa['capacity'] }} Asientos
+            </span>
+          </td>
+          <td>
+            <span class="badge bg-success p-2">
+              <i class="bi bi-check-circle-fill me-1"></i> Activa en Sistema
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="listaMesas.length === 0">
+          <td colspan="4" class="text-center py-5 text-muted">
+            <i class="bi bi-exclamation-circle d-block fs-2 mb-2 text-warning"></i>
+            Buscando mesas en el servidor o la base de datos está vacía...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

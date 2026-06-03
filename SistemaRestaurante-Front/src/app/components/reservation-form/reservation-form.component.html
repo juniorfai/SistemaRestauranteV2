@@ -1,0 +1,59 @@
+<div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+  <div class="card-header bg-dark text-white py-3">
+    <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2 text-warning"></i>Registrar Nueva Reserva</h4>
+  </div>
+  
+  <div class="card-body p-4">
+    <form [formGroup]="reservaForm" (ngSubmit)="guardarReserva()">
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">ID del Cliente</label>
+          <input type="number" class="form-control" formControlName="customerId" placeholder="Ej: 1">
+          <div class="text-danger small mt-1" *ngIf="reservaForm.get('customerId')?.touched && reservaForm.get('customerId')?.invalid">
+            El ID del cliente es requerido.
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Número de Mesa</label>
+          <input type="number" class="form-control" formControlName="tableId" placeholder="Ej: 4">
+          <div class="text-danger small mt-1" *ngIf="reservaForm.get('tableId')?.touched && reservaForm.get('tableId')?.invalid">
+            El número de mesa es requerido.
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Fecha y Hora</label>
+          <input type="datetime-local" class="form-control" formControlName="reservationDateTime">
+          <div class="text-danger small mt-1" *ngIf="reservaForm.get('reservationDateTime')?.touched && reservaForm.get('reservationDateTime')?.invalid">
+            Seleccione una fecha válida.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">No. de Personas</label>
+          <input type="number" class="form-control" formControlName="numberOfPeople" placeholder="Máx 20">
+          <div class="text-danger small mt-1" *ngIf="reservaForm.get('numberOfPeople')?.touched && reservaForm.get('numberOfPeople')?.invalid">
+            Número inválido (Mínimo 1, Máximo 20).
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Notas especiales (Opcional)</label>
+        <textarea class="form-control" formControlName="specialRequests" rows="3" placeholder="Alergias, notas de cumpleaños..."></textarea>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a routerLink="/reservas" class="btn btn-light border">Cancelar</a>
+        <button type="submit" class="btn btn-primary px-4" [disabled]="reservaForm.invalid">
+          <i class="bi bi-check-circle me-1"></i>Confirmar Reserva
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
