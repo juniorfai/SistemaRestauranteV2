@@ -5,20 +5,8 @@
   </div>
   
   <div class="btn-group shadow-sm">
-    <button (click)="cargarTodoElMenu()" class="btn btn-sm" [ngClass]="categoriaSeleccionada === 'Todos' ? 'btn-dark' : 'btn-outline-dark'">
-      Todos
-    </button>
-    <button (click)="filtrarPorCategoria('Entradas')" class="btn btn-sm" [ngClass]="categoriaSeleccionada === 'Entradas' ? 'btn-dark' : 'btn-outline-dark'">
-      Entradas
-    </button>
-    <button (click)="filtrarPorCategoria('Platos Fuertes')" class="btn btn-sm" [ngClass]="categoriaSeleccionada === 'Platos Fuertes' ? 'btn-dark' : 'btn-outline-dark'">
-      Fuertes
-    </button>
-    <button (click)="filtrarPorCategoria('Bebidas')" class="btn btn-sm" [ngClass]="categoriaSeleccionada === 'Bebidas' ? 'btn-dark' : 'btn-outline-dark'">
-      Bebidas
-    </button>
-    <button (click)="filtrarPorCategoria('Postres')" class="btn btn-sm" [ngClass]="categoriaSeleccionada === 'Postres' ? 'btn-dark' : 'btn-outline-dark'">
-      Postres
+    <button (click)="cargarTodoElMenu()" class="btn btn-sm btn-dark">
+      Todos los Platillos
     </button>
   </div>
 </div>
@@ -33,9 +21,6 @@
 
       <div class="card-body d-flex flex-column p-4">
         <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 text-uppercase fw-bold text-xs">
-            <i class="bi bi-tag-fill me-1"></i>{{ plato.category || plato['category'] || plato['category'] }}
-          </span>
           <h5 class="text-success fw-bold mb-0">${{ plato.price || plato['price'] || plato['price'] | number:'1.0-2' }}</h5>
         </div>
 
@@ -57,6 +42,6 @@
 
 <div class="text-center py-5 my-5 text-muted" *ngIf="listaMenu.length === 0">
   <i class="bi bi-egg-fried d-block fs-1 mb-3 text-secondary"></i>
-  <h5 class="fw-semibold">No hay platillos registrados en la categoría "{{ categoriaSeleccionada }}"</h5>
-  <p class="small">Verifica que existan platos guardados bajo este grupo en tu base de datos SQL.</p>
+  <h5 class="fw-semibold">No hay platillos registrados en el sistema</h5>
+  <p class="small">Verifica que tu base de datos de .NET contenga datos en la tabla MenuItems.</p>
 </div>
