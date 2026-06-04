@@ -1,3 +1,6 @@
+Ismael Barrios Dominguez 
+Tomas Muñoz orosco 
+
 BACKEND
 Restaurante Master - Backend (API REST)
 
