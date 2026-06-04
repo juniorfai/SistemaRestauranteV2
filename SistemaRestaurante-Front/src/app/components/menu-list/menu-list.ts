@@ -1,8 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; // 1. Agregamos ChangeDetectorRef
 import { CommonModule } from '@angular/common';
 import { MenuItemResponseDTO } from '../../models/menu.model';
 import { MenuService } from '../../services/menu';
-;
 
 @Component({
   selector: 'app-menu-list',
@@ -15,7 +14,8 @@ export class MenuListComponent implements OnInit {
   listaMenu: MenuItemResponseDTO[] = [];    
   categoriaSeleccionada: string = 'Todos';
 
-  constructor(private menuService: MenuService) {}
+  // 2. Inyectamos cdr en el constructor
+  constructor(private menuService: MenuService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.cargarTodoElMenu();
@@ -27,6 +27,9 @@ export class MenuListComponent implements OnInit {
       next: (datos) => {
         this.listaCompleta = datos;
         this.listaMenu = datos;
+        
+        // 3. Forzamos a Angular a redibujar el HTML con los nuevos datos recibidos
+        this.cdr.detectChanges(); 
       },
       error: (err) => console.error('Error al cargar la carta:', err)
     });
@@ -35,10 +38,13 @@ export class MenuListComponent implements OnInit {
   filtrarPorCategoria(categoria: string): void {
     this.categoriaSeleccionada = categoria;
     
-    // Filtramos localmente usando el respaldo para que la navegación sea instantánea
     this.listaMenu = this.listaCompleta.filter(plato => {
-      const catPlato = plato.category || plato['category'] || plato['category'] || '';
+      // Simplificamos la lectura de la categoría de forma segura
+      const catPlato = plato?.category || '';
       return catPlato.toLowerCase().trim() === categoria.toLowerCase().trim();
     });
+    
+    // También notificamos el cambio al filtrar localmente
+    this.cdr.detectChanges();
   }
 }
