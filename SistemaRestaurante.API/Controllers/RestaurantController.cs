@@ -1,7 +1,9 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaRestaurante.API.DTOs.Request;
 using SistemaRestaurante.API.DTOs.Response;
+using SistemaRestaurante.Domain.Constants;
 using SistemaRestaurante.Domain.Entities;
 using SistemaRestaurante.Domain.Interfaces.Services;
 
@@ -37,6 +39,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<ActionResult<RestaurantResponseDTO>> Create(RestaurantRequestDTO dto)
         {
             var created = await _restaurantService.CreateAsync(_mapper.Map<Restaurant>(dto));
@@ -44,6 +47,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> Update(int id, RestaurantRequestDTO dto)
         {
             await _restaurantService.UpdateAsync(id, _mapper.Map<Restaurant>(dto));

@@ -3,9 +3,11 @@
     <h2>Mesas</h2>
     <p>Capacidad, ubicación y estado de cada mesa del restaurante.</p>
   </div>
-  <button type="button" class="btn btn-primary px-4" (click)="openNew()">
-    <i class="bi bi-plus-lg me-2"></i>Nueva mesa
-  </button>
+  @if (auth.canManage()) {
+    <button type="button" class="btn btn-primary px-4" (click)="openNew()">
+      <i class="bi bi-plus-lg me-2"></i>Nueva mesa
+    </button>
+  }
 </div>
 
 @if (error()) {
@@ -88,13 +90,15 @@
               </select>
               <span class="ms-2 {{ statusBadges[mesa.status] }}">{{ statusLabels[mesa.status] }}</span>
             </td>
-            <td class="text-end pe-4">
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="openEdit(mesa)">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar" (click)="remove(mesa)">
-                <i class="bi bi-trash"></i>
-              </button>
+            <td class="text-end pe-4 text-nowrap">
+              @if (auth.canManage()) {
+                <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="openEdit(mesa)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar" (click)="remove(mesa)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              }
             </td>
           </tr>
         } @empty {

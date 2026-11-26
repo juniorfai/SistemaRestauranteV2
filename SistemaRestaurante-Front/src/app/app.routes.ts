@@ -1,4 +1,9 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard, roleGuard } from './auth/auth.guards';
+import { AccountComponent } from './components/account/account';
+import { LoginComponent } from './components/login/login';
+import { UserListComponent } from './components/user-list/user-list';
+import { MANAGEMENT_ROLES } from './services/auth.service';
 import { CustomerFormComponent } from './components/customer-form/customer-form';
 import { CustomerListComponent } from './components/customer-list/customer-list.component';
 import { MenuFormComponent } from './components/menu-form/menu-form';
@@ -7,22 +12,36 @@ import { ReservationFormComponent } from './components/reservation-form/reservat
 import { ReservationListComponent } from './components/reservation-list/reservation-list.component';
 import { TableListComponent } from './components/table-list/table-list.component';
 
+const management = { roles: MANAGEMENT_ROLES };
+
 export const routes: Routes = [
-  { path: '', redirectTo: 'reservas', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent, title: 'Iniciar sesión', canActivate: [guestGuard] },
 
-  { path: 'reservas', component: ReservationListComponent, title: 'Reservas' },
-  { path: 'reservas/nueva', component: ReservationFormComponent, title: 'Nueva reserva' },
-  { path: 'reservas/editar/:id', component: ReservationFormComponent, title: 'Editar reserva' },
+  // Todo lo demás exige sesión.
+  {
+    path: '',
+    canActivateChild: [authGuard],
+    children: [
+      { path: '', redirectTo: 'reservas', pathMatch: 'full' },
 
-  { path: 'mesas', component: TableListComponent, title: 'Mesas' },
+      { path: 'reservas', component: ReservationListComponent, title: 'Reservas' },
+      { path: 'reservas/nueva', component: ReservationFormComponent, title: 'Nueva reserva' },
+      { path: 'reservas/editar/:id', component: ReservationFormComponent, title: 'Editar reserva' },
 
-  { path: 'clientes', component: CustomerListComponent, title: 'Clientes' },
-  { path: 'clientes/nuevo', component: CustomerFormComponent, title: 'Nuevo cliente' },
-  { path: 'clientes/editar/:id', component: CustomerFormComponent, title: 'Editar cliente' },
+      { path: 'mesas', component: TableListComponent, title: 'Mesas' },
 
-  { path: 'menu', component: MenuListComponent, title: 'Carta' },
-  { path: 'menu/nuevo', component: MenuFormComponent, title: 'Nuevo plato' },
-  { path: 'menu/editar/:id', component: MenuFormComponent, title: 'Editar plato' },
+      { path: 'clientes', component: CustomerListComponent, title: 'Clientes' },
+      { path: 'clientes/nuevo', component: CustomerFormComponent, title: 'Nuevo cliente' },
+      { path: 'clientes/editar/:id', component: CustomerFormComponent, title: 'Editar cliente' },
+
+      { path: 'menu', component: MenuListComponent, title: 'Carta' },
+      { path: 'menu/nuevo', component: MenuFormComponent, title: 'Nuevo plato', canActivate: [roleGuard], data: management },
+      { path: 'menu/editar/:id', component: MenuFormComponent, title: 'Editar plato', canActivate: [roleGuard], data: management },
+
+      { path: 'personal', component: UserListComponent, title: 'Personal', canActivate: [roleGuard], data: { roles: ['Admin'] } },
+      { path: 'cuenta', component: AccountComponent, title: 'Mi cuenta' },
+    ],
+  },
 
   { path: '**', redirectTo: 'reservas' },
 ];

@@ -1,0 +1,161 @@
+<div class="page-header">
+  <div>
+    <h2>Personal</h2>
+    <p>Usuarios que pueden entrar en la aplicación y qué puede hacer cada uno.</p>
+  </div>
+  <button type="button" class="btn btn-primary px-4" (click)="openNew()">
+    <i class="bi bi-person-plus me-2"></i>Nuevo usuario
+  </button>
+</div>
+
+@if (notice()) {
+  <div class="alert alert-success-soft d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-check-circle me-2"></i>{{ notice() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="notice.set(null)"></button>
+  </div>
+}
+
+@if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+  </div>
+}
+
+@if (panel(); as p) {
+  @if (p.mode !== 'closed') {
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4>
+          @switch (p.mode) {
+            @case ('new') { Nuevo usuario }
+            @case ('edit') { Editar {{ p.user.username }} }
+            @case ('password') { Nueva contraseña para {{ p.user.username }} }
+          }
+        </h4>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <div class="row g-3">
+            @if (p.mode !== 'password') {
+              <div class="col-md-6">
+                <label for="fullName" class="form-label">Nombre completo</label>
+                <input id="fullName" class="form-control" formControlName="fullName" autocomplete="off"
+                       [class.is-invalid]="form.controls.fullName.touched && form.controls.fullName.invalid">
+                <div class="invalid-feedback">Escribe el nombre (máximo 100 caracteres).</div>
+              </div>
+              <div class="col-md-6">
+                <label for="username" class="form-label">Usuario</label>
+                <input id="username" class="form-control" formControlName="username" autocomplete="off"
+                       autocapitalize="none" spellcheck="false"
+                       [class.is-invalid]="form.controls.username.touched && form.controls.username.invalid">
+                <div class="invalid-feedback">De 3 a 50 caracteres: letras, números, punto o guion.</div>
+                @if (p.mode === 'edit') {
+                  <div class="form-text">El nombre de usuario no se puede cambiar.</div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label for="role" class="form-label">Rol</label>
+                <select id="role" class="form-select" formControlName="role">
+                  @for (r of roles; track r) {
+                    <option [value]="r">{{ roleLabels[r] }}</option>
+                  }
+                </select>
+                <div class="form-text">
+                  @if (p.mode === 'edit' && isSelf(p.user)) {
+                    No puedes cambiar tu propio rol ni desactivarte.
+                  } @else {
+                    {{ roleDescriptions[form.controls.role.value] }}
+                  }
+                </div>
+              </div>
+              @if (p.mode === 'edit') {
+                <div class="col-md-6 d-flex align-items-center">
+                  <div class="form-check form-switch mt-md-4">
+                    <input id="isActive" class="form-check-input" type="checkbox" role="switch" formControlName="isActive">
+                    <label for="isActive" class="form-check-label">Puede entrar en la aplicación</label>
+                  </div>
+                </div>
+              }
+            }
+            @if (p.mode !== 'edit') {
+              <div class="col-md-6">
+                <label for="password" class="form-label">{{ p.mode === 'new' ? 'Contraseña inicial' : 'Nueva contraseña' }}</label>
+                <input id="password" type="text" class="form-control" formControlName="password" autocomplete="new-password"
+                       [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid">
+                <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+                <div class="form-text">Dísela a la persona; podrá cambiarla en «Mi cuenta».</div>
+              </div>
+            }
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" (click)="close()">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th class="ps-4">Nombre</th>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th class="d-none d-lg-table-cell">Último acceso</th>
+          <th class="text-end pe-4">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of users(); track u.id) {
+          <tr [class.text-muted]="!u.isActive">
+            <td class="ps-4 fw-semibold text-nowrap">
+              {{ u.fullName }}
+              @if (isSelf(u)) { <span class="small text-muted fw-normal">(tú)</span> }
+            </td>
+            <td class="text-nowrap">{{ u.username }}</td>
+            <td><span class="tag">{{ roleLabels[u.role] }}</span></td>
+            <td>
+              <span class="status-pill" [class.status-confirmed]="u.isActive" [class.status-cancelled]="!u.isActive">
+                {{ u.isActive ? 'Activo' : 'Desactivado' }}
+              </span>
+            </td>
+            <td class="d-none d-lg-table-cell text-nowrap">
+              {{ u.lastLoginAt ? (asUtc(u.lastLoginAt) | date: 'dd/MM HH:mm' : undefined : 'es') : 'Nunca' }}
+            </td>
+            <td class="text-end pe-4 text-nowrap">
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" aria-label="Editar"
+                      (click)="openEdit(u)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" title="Nueva contraseña"
+                      aria-label="Poner nueva contraseña" (click)="openPassword(u)">
+                <i class="bi bi-key"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                @if (loading()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>Cargando usuarios...
+                } @else {
+                  <i class="bi bi-people"></i>No hay usuarios.
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

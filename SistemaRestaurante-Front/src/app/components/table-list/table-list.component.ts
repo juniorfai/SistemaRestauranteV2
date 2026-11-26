@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RestaurantResponseDTO } from '../../models/restaurant.model';
@@ -15,6 +16,7 @@ import { TABLE_STATUS_BADGES, TABLE_STATUS_LABELS, TABLE_STATUSES } from '../../
   templateUrl: './table-list.component.html',
 })
 export class TableListComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly tableService = inject(TableService);
   private readonly restaurantService = inject(RestaurantService);

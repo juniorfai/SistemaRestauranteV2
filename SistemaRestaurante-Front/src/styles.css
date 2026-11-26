@@ -229,5 +229,11 @@ h1, h2, h3, h4, h5 { font-weight: 600; color: var(--app-text); }
   --bs-alert-border-color: transparent;
 }
 
+.alert-success-soft {
+  --bs-alert-bg: var(--st-confirmed-bg);
+  --bs-alert-color: var(--st-confirmed-tx);
+  --bs-alert-border-color: transparent;
+}
+
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--app-muted); }
 .empty-state i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }

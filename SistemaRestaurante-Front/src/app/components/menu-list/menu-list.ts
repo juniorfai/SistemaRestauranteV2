@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MenuItemCategory, MenuItemResponseDTO } from '../../models/menu.model';
@@ -13,6 +14,7 @@ import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
   templateUrl: './menu-list.html',
 })
 export class MenuListComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly menuService = inject(MenuService);
 
   readonly categories = MENU_CATEGORIES;

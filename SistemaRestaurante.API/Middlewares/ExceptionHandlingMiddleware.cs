@@ -4,7 +4,7 @@ namespace SistemaRestaurante.API.Middlewares
 {
     /// <summary>
     /// Convierte las excepciones de negocio en respuestas HTTP con formato ProblemDetails (RFC 7807):
-    /// KeyNotFoundException → 404, InvalidOperationException → 409, ArgumentException → 400, resto → 500.
+    /// UnauthorizedAccessException → 401, KeyNotFoundException → 404, InvalidOperationException → 409, ArgumentException → 400, resto → 500.
     /// </summary>
     public class ExceptionHandlingMiddleware
     {
@@ -32,6 +32,7 @@ namespace SistemaRestaurante.API.Middlewares
             {
                 var (status, title) = ex switch
                 {
+                    UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "No autorizado"),
                     KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado"),
                     InvalidOperationException => (StatusCodes.Status409Conflict, "Operación no permitida"),
                     ArgumentException => (StatusCodes.Status400BadRequest, "Datos no válidos"),
