@@ -19,6 +19,16 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.navbar-brand')?.textContent).toContain('Restaurante Master');
+    expect(compiled.querySelector('.brand')?.textContent).toContain('Restaurante Master');
+  });
+
+  it('should toggle between day and night themes', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    const initial = app.theme.theme();
+    app.theme.toggle();
+    expect(app.theme.theme()).not.toBe(initial);
+    fixture.detectChanges();
+    expect(document.documentElement.getAttribute('data-bs-theme')).toBe(app.theme.theme());
   });
 });

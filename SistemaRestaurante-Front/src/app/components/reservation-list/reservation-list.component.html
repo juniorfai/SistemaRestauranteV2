@@ -1,33 +1,22 @@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+<div class="page-header">
   <div>
-    <h2 class="fw-bold text-dark"><i class="bi bi-calendar-check me-2 text-primary"></i>Reservas</h2>
-    <p class="text-muted mb-0">Consulta, confirma y gestiona las reservas del restaurante.</p>
+    <h2>Reservas</h2>
+    <p>{{ mode() === 'upcoming' ? 'Próximas reservas pendientes y confirmadas.' : 'Todas las reservas del día elegido.' }}</p>
   </div>
-  <a routerLink="/reservas/nueva" class="btn btn-primary shadow-sm">
-    <i class="bi bi-calendar-plus me-2"></i>Nueva reserva
+  <a routerLink="/reservas/nueva" class="btn btn-primary px-4">
+    <i class="bi bi-plus-lg me-2"></i>Nueva reserva
   </a>
 </div>
 
-<div class="card shadow-sm border-0 mb-3">
-  <div class="card-body d-flex flex-wrap align-items-end gap-3">
-    <div class="btn-group" role="group" aria-label="Filtro de reservas">
-      <button type="button" class="btn" [class.btn-dark]="mode() === 'upcoming'"
-              [class.btn-outline-dark]="mode() !== 'upcoming'" (click)="showUpcoming()">
-        Próximas
-      </button>
-      <button type="button" class="btn" [class.btn-dark]="mode() === 'day'"
-              [class.btn-outline-dark]="mode() !== 'day'" (click)="showDay()">
-        Por día
-      </button>
-    </div>
-
-    @if (mode() === 'day') {
-      <div>
-        <label for="reservation-date" class="form-label small text-muted mb-1">Fecha</label>
-        <input id="reservation-date" type="date" class="form-control" [(ngModel)]="selectedDate" (change)="load()">
-      </div>
-    }
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+  <div class="segmented" role="group" aria-label="Filtro de reservas">
+    <button type="button" [class.active]="mode() === 'upcoming'" (click)="showUpcoming()">Próximas</button>
+    <button type="button" [class.active]="mode() === 'day'" (click)="showDay()">Por día</button>
   </div>
+
+  @if (mode() === 'day') {
+    <input type="date" class="form-control w-auto" [(ngModel)]="selectedDate" (change)="load()" aria-label="Fecha">
+  }
 </div>
 
 @if (error()) {
@@ -37,16 +26,16 @@
   </div>
 }
 
-<div class="card shadow-sm border-0">
-  <div class="card-body p-0 table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-dark">
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
         <tr>
-          <th class="ps-4">Fecha y hora</th>
+          <th class="ps-4">Hora</th>
           <th>Cliente</th>
           <th>Mesa</th>
-          <th>Personas</th>
-          <th>Total</th>
+          <th class="text-center">Personas</th>
+          <th class="d-none d-xl-table-cell">Total</th>
           <th>Estado</th>
           <th class="text-end pe-4">Acciones</th>
         </tr>
@@ -54,36 +43,39 @@
       <tbody>
         @for (r of reservations(); track r.id) {
           <tr>
-            <td class="ps-4 fw-semibold">{{ r.reservationDateTime | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="ps-4">
+              <div class="time-big">{{ r.reservationDateTime | date: 'HH:mm' }}</div>
+              <div class="time-date">{{ r.reservationDateTime | date: 'EEE dd/MM' : undefined : 'es' }}</div>
+            </td>
             <td>
-              <div class="fw-semibold">{{ r.customerName }}</div>
+              <div class="fw-semibold text-nowrap">{{ r.customerName }}</div>
               <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ r.customerPhone }}</div>
               @if (r.specialRequests) {
-                <div class="small text-info"><i class="bi bi-chat-left-text me-1"></i>{{ r.specialRequests }}</div>
+                <div class="small text-note"><i class="bi bi-chat-left-text me-1"></i>{{ r.specialRequests }}</div>
               }
             </td>
-            <td>Mesa {{ r.tableNumber }} <span class="text-muted small">({{ r.tableCapacity }} p.)</span></td>
-            <td>{{ r.numberOfPeople }}</td>
-            <td>{{ r.totalAmount ? (r.totalAmount | currency) : '—' }}</td>
-            <td><span class="badge {{ statusBadges[r.status] }}">{{ statusLabels[r.status] }}</span></td>
-            <td class="text-end pe-4">
+            <td class="fw-semibold text-nowrap">Mesa {{ r.tableNumber }}</td>
+            <td class="text-center fw-semibold">{{ r.numberOfPeople }}</td>
+            <td class="d-none d-xl-table-cell">{{ r.totalAmount ? (r.totalAmount | currency) : '—' }}</td>
+            <td><span class="{{ statusBadges[r.status] }}">{{ statusLabels[r.status] }}</span></td>
+            <td class="text-end pe-4 text-nowrap">
               @if (isOpen(r)) {
-                <div class="d-inline-flex flex-wrap justify-content-end gap-1">
+                <div class="d-inline-flex justify-content-end gap-1">
                   @if (r.status === 'Pending') {
-                    <button type="button" class="btn btn-sm btn-outline-primary" title="Confirmar" (click)="runAction(r, 'confirm')">
-                      <i class="bi bi-check2"></i>
+                    <button type="button" class="btn btn-sm btn-state btn-state-confirm" title="Confirmar" aria-label="Confirmar" (click)="runAction(r, 'confirm')">
+                      <i class="bi bi-check-lg"></i>
                     </button>
                   }
-                  <button type="button" class="btn btn-sm btn-outline-success" title="Completada" (click)="runAction(r, 'complete')">
+                  <button type="button" class="btn btn-sm btn-state btn-state-complete" title="Completada" aria-label="Marcar completada" (click)="runAction(r, 'complete')">
                     <i class="bi bi-check2-all"></i>
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning" title="No asistió" (click)="runAction(r, 'no-show')">
+                  <button type="button" class="btn btn-sm btn-state btn-state-noshow" title="No asistió" aria-label="Marcar que no asistió" (click)="runAction(r, 'no-show')">
                     <i class="bi bi-person-x"></i>
                   </button>
-                  <a [routerLink]="['/reservas/editar', r.id]" class="btn btn-sm btn-outline-secondary" title="Editar">
+                  <a [routerLink]="['/reservas/editar', r.id]" class="btn btn-sm btn-outline-secondary" title="Editar" aria-label="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  <button type="button" class="btn btn-sm btn-outline-danger" title="Cancelar" (click)="runAction(r, 'cancel')">
+                  <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Cancelar" aria-label="Cancelar" (click)="runAction(r, 'cancel')">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
@@ -92,12 +84,14 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="7" class="text-center py-5 text-muted">
-              @if (loading()) {
-                <span class="spinner-border spinner-border-sm me-2"></span>Cargando reservas...
-              } @else {
-                <i class="bi bi-calendar-x d-block fs-2 mb-2"></i>No hay reservas para mostrar.
-              }
+            <td colspan="7">
+              <div class="empty-state">
+                @if (loading()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>Cargando reservas...
+                } @else {
+                  <i class="bi bi-calendar-x"></i>No hay reservas para mostrar.
+                }
+              </div>
             </td>
           </tr>
         }

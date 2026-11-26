@@ -10,12 +10,13 @@ export const RESERVATION_STATUS_LABELS: Record<ReservationStatus, string> = {
   NoShow: 'No asistió',
 };
 
+/** Clases CSS del estado (definidas en styles.css). */
 export const RESERVATION_STATUS_BADGES: Record<ReservationStatus, string> = {
-  Pending: 'bg-warning text-dark',
-  Confirmed: 'bg-primary',
-  Completed: 'bg-success',
-  Cancelled: 'bg-secondary',
-  NoShow: 'bg-danger',
+  Pending: 'status-pill status-pending',
+  Confirmed: 'status-pill status-confirmed',
+  Completed: 'status-pill status-completed',
+  Cancelled: 'status-pill status-cancelled',
+  NoShow: 'status-pill status-danger',
 };
 
 export const TABLE_STATUS_LABELS: Record<TableStatus, string> = {
@@ -26,10 +27,10 @@ export const TABLE_STATUS_LABELS: Record<TableStatus, string> = {
 };
 
 export const TABLE_STATUS_BADGES: Record<TableStatus, string> = {
-  Available: 'bg-success',
-  Occupied: 'bg-danger',
-  Reserved: 'bg-primary',
-  OutOfService: 'bg-secondary',
+  Available: 'status-pill status-confirmed',
+  Occupied: 'status-pill status-danger',
+  Reserved: 'status-pill status-completed',
+  OutOfService: 'status-pill status-cancelled',
 };
 
 export const TABLE_STATUSES = Object.keys(TABLE_STATUS_LABELS) as TableStatus[];

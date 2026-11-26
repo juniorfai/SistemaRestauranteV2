@@ -1,7 +1,7 @@
-<div class="card shadow-sm border-0 mx-auto" style="max-width: 760px;">
-  <div class="card-header bg-dark text-white py-3">
-    <h4 class="mb-0 fw-bold">
-      <i class="bi me-2 text-warning" [class.bi-calendar-plus]="!isEditMode()" [class.bi-pencil-square]="isEditMode()"></i>
+<div class="card mx-auto" style="max-width: 760px;">
+  <div class="card-header">
+    <h4>
+      <i class="bi me-2" [class.bi-calendar-plus]="!isEditMode()" [class.bi-pencil-square]="isEditMode()"></i>
       {{ isEditMode() ? 'Modificar reserva' : 'Nueva reserva' }}
     </h4>
   </div>
@@ -23,14 +23,14 @@
             }
           </select>
           @if (!isEditMode()) {
-            <a routerLink="/clientes/nuevo" class="btn btn-outline-success text-nowrap" title="Registrar cliente nuevo">
+            <a routerLink="/clientes/nuevo" class="btn btn-outline-secondary text-nowrap" title="Registrar cliente nuevo">
               <i class="bi bi-person-plus"></i>
             </a>
           }
         </div>
-        <div class="invalid-feedback d-block" [hidden]="!(form.controls.customerId.touched && form.controls.customerId.invalid)">
-          Selecciona el cliente.
-        </div>
+        @if (form.controls.customerId.touched && form.controls.customerId.invalid) {
+          <div class="invalid-feedback d-block">Selecciona el cliente.</div>
+        }
       </div>
 
       <div class="row g-3 mb-3">
@@ -88,7 +88,7 @@
                   <tr>
                     <td>
                       {{ item.name }}
-                      <span class="badge bg-light text-dark border ms-1">{{ categoryLabels[item.category] }}</span>
+                      <span class="tag ms-1">{{ categoryLabels[item.category] }}</span>
                     </td>
                     <td class="text-end text-nowrap">{{ item.price | currency }}</td>
                     <td style="width: 90px;">
@@ -105,7 +105,7 @@
       }
 
       <div class="d-flex justify-content-end gap-2">
-        <a routerLink="/reservas" class="btn btn-light border">Volver</a>
+        <a routerLink="/reservas" class="btn btn-outline-secondary">Volver</a>
         <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
           @if (saving()) {
             <span class="spinner-border spinner-border-sm me-1"></span>
