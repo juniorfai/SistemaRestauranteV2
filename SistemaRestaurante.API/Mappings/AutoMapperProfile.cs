@@ -10,6 +10,9 @@ namespace SistemaRestaurante.API.Mappings
     {
         public AutoMapperProfile()
         {
+            // User (nunca se expone el hash ni el SecurityStamp)
+            CreateMap<User, UserResponseDTO>();
+
             // Restaurant
             CreateMap<Restaurant, RestaurantResponseDTO>();
             CreateMap<RestaurantRequestDTO, Restaurant>();

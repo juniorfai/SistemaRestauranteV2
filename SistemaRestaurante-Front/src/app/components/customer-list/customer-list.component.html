@@ -49,9 +49,11 @@
                 <a [routerLink]="['/clientes/editar', cliente.id]" class="btn btn-sm btn-outline-secondary" title="Editar">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <button type="button" (click)="onDelete(cliente)" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </button>
+                @if (auth.canManage()) {
+                  <button type="button" (click)="onDelete(cliente)" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
               </div>
             </td>
           </tr>

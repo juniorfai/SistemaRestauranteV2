@@ -1,0 +1,77 @@
+<div class="page-header">
+  <div>
+    <h2>Mi cuenta</h2>
+    <p>Tus datos de acceso.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-body">
+        @if (auth.user(); as user) {
+          <dl class="mb-0">
+            <dt class="text-muted small">Nombre</dt>
+            <dd class="fw-semibold">{{ user.fullName }}</dd>
+            <dt class="text-muted small">Usuario</dt>
+            <dd class="fw-semibold">{{ user.username }}</dd>
+            <dt class="text-muted small">Rol</dt>
+            <dd class="mb-0"><span class="tag">{{ roleLabels[user.role] }}</span></dd>
+          </dl>
+        }
+        <hr class="my-4">
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="theme.toggle()">
+            <i class="bi me-2" [class.bi-sun]="theme.theme() === 'dark'" [class.bi-moon-stars]="theme.theme() !== 'dark'"></i>
+            {{ theme.theme() === 'dark' ? 'Modo día' : 'Modo noche' }}
+          </button>
+          <button type="button" class="btn btn-state btn-state-cancel" (click)="auth.logout()">
+            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header"><h4>Cambiar contraseña</h4></div>
+      <div class="card-body">
+        @if (error()) {
+          <div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="mb-3">
+            <label for="currentPassword" class="form-label">Contraseña actual</label>
+            <input id="currentPassword" type="password" class="form-control" formControlName="currentPassword"
+                   autocomplete="current-password"
+                   [class.is-invalid]="form.controls.currentPassword.touched && form.controls.currentPassword.invalid">
+            <div class="invalid-feedback">Escribe tu contraseña actual.</div>
+          </div>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">Nueva contraseña</label>
+            <input id="newPassword" type="password" class="form-control" formControlName="newPassword"
+                   autocomplete="new-password"
+                   [class.is-invalid]="form.controls.newPassword.touched && form.controls.newPassword.invalid">
+            <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+          </div>
+          <div class="mb-4">
+            <label for="confirmPassword" class="form-label">Repite la nueva contraseña</label>
+            <input id="confirmPassword" type="password" class="form-control" formControlName="confirmPassword"
+                   autocomplete="new-password"
+                   [class.is-invalid]="form.controls.confirmPassword.touched && form.hasError('mismatch')">
+            <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-3">
+            <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Cambiar contraseña
+            </button>
+            <span class="small text-muted">Después tendrás que volver a entrar.</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

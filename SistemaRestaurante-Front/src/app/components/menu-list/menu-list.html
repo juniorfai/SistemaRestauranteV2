@@ -3,9 +3,11 @@
     <h2>Carta del restaurante</h2>
     <p>Platos y bebidas que se ofrecen a los clientes.</p>
   </div>
-  <a routerLink="/menu/nuevo" class="btn btn-primary px-4">
-    <i class="bi bi-plus-lg me-2"></i>Nuevo plato
-  </a>
+  @if (auth.canManage()) {
+    <a routerLink="/menu/nuevo" class="btn btn-primary px-4">
+      <i class="bi bi-plus-lg me-2"></i>Nuevo plato
+    </a>
+  }
 </div>
 
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
@@ -44,14 +46,16 @@
           <h4 class="card-title mb-1">{{ plato.name }}</h4>
           <h5 class="text-price mb-2">{{ plato.price | currency }}</h5>
           <p class="card-text text-muted flex-grow-1 small">{{ plato.description }}</p>
-          <div class="d-flex justify-content-end gap-1 mt-auto">
-            <a [routerLink]="['/menu/editar', plato.id]" class="btn btn-sm btn-outline-secondary" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar" (click)="remove(plato)">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
+          @if (auth.canManage()) {
+            <div class="d-flex justify-content-end gap-1 mt-auto">
+              <a [routerLink]="['/menu/editar', plato.id]" class="btn btn-sm btn-outline-secondary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar" (click)="remove(plato)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          }
         </div>
       </div>
     </div>

@@ -1,7 +1,9 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaRestaurante.API.DTOs.Request;
 using SistemaRestaurante.API.DTOs.Response;
+using SistemaRestaurante.Domain.Constants;
 using SistemaRestaurante.Domain.Entities;
 using SistemaRestaurante.Domain.Interfaces.Services;
 
@@ -99,6 +101,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = Roles.Management)]
         public async Task<IActionResult> Delete(int id)
         {
             await _reservationService.DeleteAsync(id);

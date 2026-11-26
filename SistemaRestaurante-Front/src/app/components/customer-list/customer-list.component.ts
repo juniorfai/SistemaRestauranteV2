@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 import { RouterLink } from '@angular/router';
 import { CustomerResponseDTO } from '../../models/customer.model';
 import { CustomerService } from '../../services/customer.service';
@@ -11,6 +12,7 @@ import { apiErrorMessage } from '../../utils/api-error';
   templateUrl: './customer-list.component.html',
 })
 export class CustomerListComponent implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly customerService = inject(CustomerService);
 
   readonly customers = signal<CustomerResponseDTO[]>([]);

@@ -1,3 +1,4 @@
+import { UserRole } from '../models/auth.model';
 import { MenuItemCategory } from '../models/menu.model';
 import { ReservationStatus } from '../models/reservation.model';
 import { TableStatus } from '../models/table.model';
@@ -44,6 +45,20 @@ export const MENU_CATEGORY_LABELS: Record<MenuItemCategory, string> = {
 };
 
 export const MENU_CATEGORIES = Object.keys(MENU_CATEGORY_LABELS) as MenuItemCategory[];
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  Admin: 'Administrador',
+  Manager: 'Encargado',
+  Staff: 'Camarero / sala',
+};
+
+export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  Admin: 'Todo, incluido el personal y los datos del restaurante.',
+  Manager: 'Reservas, clientes, mesas y carta. No gestiona el personal.',
+  Staff: 'Reservas, clientes y estado de las mesas. No borra ni cambia la carta ni las mesas.',
+};
+
+export const ROLES = Object.keys(ROLE_LABELS) as UserRole[];
 
 /** Fecha local en formato yyyy-MM-dd (para inputs type="date"). */
 export function toDateInputValue(date: Date): string {

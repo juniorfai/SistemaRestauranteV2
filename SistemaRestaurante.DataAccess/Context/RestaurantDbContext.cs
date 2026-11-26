@@ -19,6 +19,7 @@ namespace SistemaRestaurante.DataAccess.Context
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
         public DbSet<ReservationMenuItem> ReservationMenuItems { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +57,17 @@ namespace SistemaRestaurante.DataAccess.Context
             modelBuilder.Entity<Reservation>()
                 .Property(r => r.TotalAmount)
                 .HasPrecision(18, 2);
+
+            // Usuarios del personal
+            modelBuilder.Entity<User>(user =>
+            {
+                user.HasIndex(u => u.Username).IsUnique();
+                user.Property(u => u.Username).HasMaxLength(50).IsRequired();
+                user.Property(u => u.FullName).HasMaxLength(100).IsRequired();
+                user.Property(u => u.PasswordHash).HasMaxLength(200).IsRequired();
+                user.Property(u => u.SecurityStamp).HasMaxLength(64).IsRequired();
+                user.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
+            });
         }
     }
 }

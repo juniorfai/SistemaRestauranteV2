@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaRestaurante.API.DTOs.Request;
 using SistemaRestaurante.API.DTOs.Response;
+using SistemaRestaurante.Domain.Constants;
 using SistemaRestaurante.Domain.Entities;
 using SistemaRestaurante.Domain.Enums;
 using SistemaRestaurante.Domain.Interfaces.Services;
@@ -53,6 +55,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Roles.Management)]
         public async Task<ActionResult<MenuItemResponseDTO>> Create(MenuItemRequestDTO dto)
         {
             var created = await _menuItemService.CreateAsync(_mapper.Map<MenuItem>(dto));
@@ -60,6 +63,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = Roles.Management)]
         public async Task<IActionResult> Update(int id, MenuItemRequestDTO dto)
         {
             await _menuItemService.UpdateAsync(id, _mapper.Map<MenuItem>(dto));
@@ -67,6 +71,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = Roles.Management)]
         public async Task<IActionResult> Delete(int id)
         {
             await _menuItemService.DeleteAsync(id);

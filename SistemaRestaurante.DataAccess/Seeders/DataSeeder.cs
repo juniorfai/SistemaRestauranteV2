@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SistemaRestaurante.Domain.Interfaces.Services;
 
 namespace SistemaRestaurante.DataAccess.Seeders
 {
@@ -97,6 +98,19 @@ namespace SistemaRestaurante.DataAccess.Seeders
             }
             await context.Reservations.AddRangeAsync(reservations);
             await context.SaveChangesAsync();
+        }
+    
+        /// <summary>
+        /// Usuarios de prueba para desarrollo (uno por rol, además del administrador inicial).
+        /// Solo se ejecuta con Database:SeedDemoData = true. Nunca activar en producción.
+        /// </summary>
+        public static async Task SeedDemoUsersAsync(RestaurantDbContext context, IUserService userService)
+        {
+            if (await context.Users.AnyAsync(u => u.Role != UserRole.Admin))
+                return;
+
+            await userService.CreateAsync("encargado", "Laura Encargada", UserRole.Manager, "Encargado123!");
+            await userService.CreateAsync("camarero", "Pablo Camarero", UserRole.Staff, "Camarero123!");
         }
     }
 }
