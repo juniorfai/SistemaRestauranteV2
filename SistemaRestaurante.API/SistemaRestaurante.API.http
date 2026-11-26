@@ -1,0 +1,26 @@
+@baseUrl = https://localhost:7191/api
+
+### Mesas libres para 4 personas
+GET {{baseUrl}}/Table/available?dateTime=2030-01-15T20:00&numberOfPeople=4
+Accept: application/json
+
+### Reservas próximas
+GET {{baseUrl}}/Reservation
+Accept: application/json
+
+### Crear reserva
+POST {{baseUrl}}/Reservation
+Content-Type: application/json
+
+{
+  "reservationDateTime": "2030-01-15T20:00",
+  "numberOfPeople": 4,
+  "customerId": 1,
+  "tableId": 6,
+  "specialRequests": "Cumpleaños",
+  "menuItemIds": [3],
+  "quantities": [2]
+}
+
+### Confirmar reserva
+PATCH {{baseUrl}}/Reservation/1/confirm

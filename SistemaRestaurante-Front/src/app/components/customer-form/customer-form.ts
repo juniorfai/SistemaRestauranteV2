@@ -1,64 +1,55 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { CustomerService } from '../../services/customer.service';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Observable } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CustomerRequestDTO } from '../../models/customer.model';
+import { CustomerService } from '../../services/customer.service';
+import { apiErrorMessage } from '../../utils/api-error';
 
 @Component({
   selector: 'app-customer-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './customer-form.html'
+  imports: [NgClass, ReactiveFormsModule, RouterLink],
+  templateUrl: './customer-form.html',
 })
 export class CustomerFormComponent implements OnInit {
-  customerForm!: FormGroup;
-  isEditMode = false;
-  customerId!: number;
+  private readonly fb = inject(FormBuilder);
+  private readonly customerService = inject(CustomerService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  constructor(
-    private fb: FormBuilder,
-    private customerService: CustomerService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {}
+  readonly customerForm = this.fb.nonNullable.group({
+    firstName: ['', [Validators.required, Validators.maxLength(50)]],
+    lastName: ['', [Validators.required, Validators.maxLength(50)]],
+    email: ['', [Validators.required, Validators.email]],
+    phoneNumber: ['', [Validators.required, Validators.pattern('^\\+?[0-9\\s-]{7,20}$')]],
+    preferences: ['', Validators.maxLength(500)],
+  });
+
+  isEditMode = false;
+  private customerId = 0;
+
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.initForm();
-
-    // Detectar si venimos a editar mediante el ID en la URL
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.isEditMode = true;
-      this.customerId = parseInt(idParam, 10);
-      this.loadCustomerData();
+      this.customerId = Number(idParam);
+      this.customerService.getCustomerById(this.customerId).subscribe({
+        next: (customer) =>
+          this.customerForm.patchValue({
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            email: customer.email,
+            phoneNumber: customer.phoneNumber,
+            preferences: customer.preferences ?? '',
+          }),
+        error: (err) => this.error.set(apiErrorMessage(err, 'No se pudo cargar el cliente.')),
+      });
     }
-  }
-
-  private initForm(): void {
-    this.customerForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.maxLength(50)]],
-      lastName: ['', [Validators.required, Validators.maxLength(50)]],
-      email: ['', [Validators.required, Validators.email]],
-      phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9\\s-]{7,15}$')]],
-      preferences: ['']
-    });
-  }
-
-  private loadCustomerData(): void {
-    this.customerService.getCustomerById(this.customerId).subscribe({
-      next: (customer) => {
-        // Poblamos el formulario con las respuestas de la BD tolerando mayúsculas/minúsculas
-        this.customerForm.patchValue({
-          firstName: customer.firstName || customer['firstName'],
-          lastName: customer.lastName || customer['lastName'],
-          email: customer.email || customer['email'],
-          phoneNumber: customer.phoneNumber || customer['phoneNumber'],
-          preferences: customer.preferences || customer['preferences']
-        });
-      },
-      error: (err) => console.error('Error al cargar cliente:', err)
-    });
   }
 
   onSubmit(): void {
@@ -67,18 +58,22 @@ export class CustomerFormComponent implements OnInit {
       return;
     }
 
-    const requestData: CustomerRequestDTO = this.customerForm.value;
+    const value = this.customerForm.getRawValue();
+    const request: CustomerRequestDTO = { ...value, preferences: value.preferences || null };
 
-    if (this.isEditMode) {
-      this.customerService.updateCustomer(this.customerId, requestData).subscribe({
-        next: () => this.router.navigate(['/clientes']),
-        error: (err) => console.error('Error al actualizar:', err)
-      });
-    } else {
-      this.customerService.createCustomer(requestData).subscribe({
-        next: () => this.router.navigate(['/clientes']),
-        error: (err) => console.error('Error al registrar:', err)
-      });
-    }
+    this.saving.set(true);
+    this.error.set(null);
+
+    const request$: Observable<unknown> = this.isEditMode
+      ? this.customerService.updateCustomer(this.customerId, request)
+      : this.customerService.createCustomer(request);
+
+    request$.subscribe({
+      next: () => this.router.navigate(['/clientes']),
+      error: (err) => {
+        this.error.set(apiErrorMessage(err, 'No se pudo guardar el cliente.'));
+        this.saving.set(false);
+      },
+    });
   }
 }

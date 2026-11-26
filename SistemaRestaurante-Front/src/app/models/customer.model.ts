@@ -4,8 +4,9 @@ export interface CustomerResponseDTO {
   lastName: string;
   email: string;
   phoneNumber: string;
-  preferences?: string;
-  isActive: boolean;
+  preferences?: string | null;
+  totalReservations: number;
+  createdAt: string;
 }
 
 export interface CustomerRequestDTO {
@@ -13,5 +14,5 @@ export interface CustomerRequestDTO {
   lastName: string;
   email: string;
   phoneNumber: string;
-  preferences?: string;
+  preferences?: string | null;
 }

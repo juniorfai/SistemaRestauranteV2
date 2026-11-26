@@ -1,47 +1,58 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; // 1. Importamos ChangeDetectorRef
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { CustomerService } from '../../services/customer.service';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CustomerResponseDTO } from '../../models/customer.model';
+import { CustomerService } from '../../services/customer.service';
+import { apiErrorMessage } from '../../utils/api-error';
 
 @Component({
   selector: 'app-customer-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: './customer-list.component.html'
+  imports: [RouterLink],
+  templateUrl: './customer-list.component.html',
 })
 export class CustomerListComponent implements OnInit {
-  listaClientes: CustomerResponseDTO[] = [];
+  private readonly customerService = inject(CustomerService);
 
-  // 2. Inyectamos cdr en el constructor
-  constructor(
-    private customerService: CustomerService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  readonly customers = signal<CustomerResponseDTO[]>([]);
+  readonly search = signal('');
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly filteredCustomers = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    if (!term) {
+      return this.customers();
+    }
+    return this.customers().filter((c) =>
+      `${c.firstName} ${c.lastName} ${c.email} ${c.phoneNumber}`.toLowerCase().includes(term),
+    );
+  });
 
   ngOnInit(): void {
-    this.cargarClientes();
+    this.load();
   }
 
-  cargarClientes(): void {
+  load(): void {
+    this.loading.set(true);
     this.customerService.getCustomers().subscribe({
-      next: (datos) => {
-        this.listaClientes = datos;
-        // 3. Forzamos a Angular a renderizar los clientes de inmediato
-        this.cdr.detectChanges(); 
+      next: (data) => {
+        this.customers.set(data);
+        this.loading.set(false);
       },
-      error: (err) => console.error('Error al traer clientes:', err)
+      error: (err) => {
+        this.error.set(apiErrorMessage(err, 'No se pudieron cargar los clientes.'));
+        this.loading.set(false);
+      },
     });
   }
 
-  onDelete(id: number): void {
-    if (confirm('¿Estás completamente seguro de que deseas eliminar este cliente del sistema?')) {
-      this.customerService.deleteCustomer(id).subscribe({
-        next: () => {
-          this.cargarClientes();
-        },
-        error: (err) => console.error('Error al eliminar cliente:', err)
-      });
+  onDelete(customer: CustomerResponseDTO): void {
+    if (!confirm(`¿Eliminar a ${customer.firstName} ${customer.lastName}?`)) {
+      return;
     }
+    this.customerService.deleteCustomer(customer.id).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(apiErrorMessage(err)),
+    });
   }
 }

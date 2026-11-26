@@ -1,59 +1,120 @@
-<div class="card shadow-sm border-0 mx-auto" style="max-width: 600px;">
+<div class="card shadow-sm border-0 mx-auto" style="max-width: 760px;">
   <div class="card-header bg-dark text-white py-3">
-    <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-plus me-2 text-warning"></i>Registrar Nueva Reserva</h4>
+    <h4 class="mb-0 fw-bold">
+      <i class="bi me-2 text-warning" [class.bi-calendar-plus]="!isEditMode()" [class.bi-pencil-square]="isEditMode()"></i>
+      {{ isEditMode() ? 'Modificar reserva' : 'Nueva reserva' }}
+    </h4>
   </div>
-  
+
   <div class="card-body p-4">
-    <form [formGroup]="reservaForm" (ngSubmit)="guardarReserva()">
-      
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">ID del Cliente</label>
-          <input type="number" class="form-control" formControlName="customerId" placeholder="Ej: 1">
-          <div class="text-danger small mt-1" *ngIf="reservaForm.get('customerId')?.touched && reservaForm.get('customerId')?.invalid">
-            El ID del cliente es requerido.
-          </div>
+    @if (error()) {
+      <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="mb-3">
+        <label for="customer" class="form-label fw-semibold">Cliente</label>
+        <div class="d-flex gap-2">
+          <select id="customer" class="form-select" formControlName="customerId"
+                  [class.is-invalid]="form.controls.customerId.touched && form.controls.customerId.invalid">
+            <option [ngValue]="0" disabled>Selecciona un cliente...</option>
+            @for (c of customers(); track c.id) {
+              <option [ngValue]="c.id">{{ c.firstName }} {{ c.lastName }} · {{ c.phoneNumber }}</option>
+            }
+          </select>
+          @if (!isEditMode()) {
+            <a routerLink="/clientes/nuevo" class="btn btn-outline-success text-nowrap" title="Registrar cliente nuevo">
+              <i class="bi bi-person-plus"></i>
+            </a>
+          }
         </div>
-        
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Número de Mesa</label>
-          <input type="number" class="form-control" formControlName="tableId" placeholder="Ej: 4">
-          <div class="text-danger small mt-1" *ngIf="reservaForm.get('tableId')?.touched && reservaForm.get('tableId')?.invalid">
-            El número de mesa es requerido.
-          </div>
+        <div class="invalid-feedback d-block" [hidden]="!(form.controls.customerId.touched && form.controls.customerId.invalid)">
+          Selecciona el cliente.
         </div>
       </div>
 
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">Fecha y Hora</label>
-          <input type="datetime-local" class="form-control" formControlName="reservationDateTime">
-          <div class="text-danger small mt-1" *ngIf="reservaForm.get('reservationDateTime')?.touched && reservaForm.get('reservationDateTime')?.invalid">
-            Seleccione una fecha válida.
-          </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-7">
+          <label for="datetime" class="form-label fw-semibold">Fecha y hora</label>
+          <input id="datetime" type="datetime-local" class="form-control" formControlName="reservationDateTime"
+                 (change)="searchTables()"
+                 [class.is-invalid]="form.controls.reservationDateTime.touched && form.controls.reservationDateTime.invalid">
         </div>
+        <div class="col-md-5">
+          <label for="people" class="form-label fw-semibold">Personas</label>
+          <input id="people" type="number" min="1" max="50" class="form-control" formControlName="numberOfPeople"
+                 (change)="searchTables()"
+                 [class.is-invalid]="form.controls.numberOfPeople.touched && form.controls.numberOfPeople.invalid">
+        </div>
+      </div>
 
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">No. de Personas</label>
-          <input type="number" class="form-control" formControlName="numberOfPeople" placeholder="Máx 20">
-          <div class="text-danger small mt-1" *ngIf="reservaForm.get('numberOfPeople')?.touched && reservaForm.get('numberOfPeople')?.invalid">
-            Número inválido (Mínimo 1, Máximo 20).
-          </div>
-        </div>
+      <div class="mb-3">
+        <label for="table" class="form-label fw-semibold">Mesa</label>
+        <select id="table" class="form-select" formControlName="tableId"
+                [class.is-invalid]="form.controls.tableId.touched && form.controls.tableId.invalid">
+          <option [ngValue]="0" disabled>
+            @if (!tablesSearched()) {
+              Elige fecha, hora y personas para ver las mesas libres
+            } @else if (availableTables().length === 0) {
+              No hay mesas libres para ese horario
+            } @else {
+              Selecciona una mesa...
+            }
+          </option>
+          @for (t of availableTables(); track t.id) {
+            <option [ngValue]="t.id">
+              Mesa {{ t.tableNumber }} · {{ t.capacity }} personas{{ t.location ? ' · ' + t.location : '' }}{{ isCurrentTable(t) ? ' (actual)' : '' }}
+            </option>
+          }
+        </select>
+        @if (tablesSearched()) {
+          <div class="form-text">{{ availableTables().length }} mesa(s) libre(s) para ese horario.</div>
+        }
       </div>
 
       <div class="mb-4">
-        <label class="form-label fw-semibold">Notas especiales (Opcional)</label>
-        <textarea class="form-control" formControlName="specialRequests" rows="3" placeholder="Alergias, notas de cumpleaños..."></textarea>
+        <label for="notes" class="form-label fw-semibold">Notas especiales <span class="text-muted">(opcional)</span></label>
+        <textarea id="notes" class="form-control" formControlName="specialRequests" rows="2"
+                  placeholder="Alergias, cumpleaños, silla para bebé..."></textarea>
       </div>
+
+      @if (!isEditMode() && menuItems().length > 0) {
+        <details class="mb-4">
+          <summary class="fw-semibold mb-2">Pedido anticipado <span class="text-muted fw-normal">(opcional)</span></summary>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-2">
+              <tbody>
+                @for (item of menuItems(); track item.id) {
+                  <tr>
+                    <td>
+                      {{ item.name }}
+                      <span class="badge bg-light text-dark border ms-1">{{ categoryLabels[item.category] }}</span>
+                    </td>
+                    <td class="text-end text-nowrap">{{ item.price | currency }}</td>
+                    <td style="width: 90px;">
+                      <input type="number" min="0" class="form-control form-control-sm" [value]="quantityOf(item.id)"
+                             (input)="setQuantity(item.id, $any($event.target).value)" [attr.aria-label]="'Cantidad de ' + item.name">
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="text-end fw-semibold">Total estimado: {{ preorderTotal() | currency }}</div>
+        </details>
+      }
 
       <div class="d-flex justify-content-end gap-2">
-        <a routerLink="/reservas" class="btn btn-light border">Cancelar</a>
-        <button type="submit" class="btn btn-primary px-4" [disabled]="reservaForm.invalid">
-          <i class="bi bi-check-circle me-1"></i>Confirmar Reserva
+        <a routerLink="/reservas" class="btn btn-light border">Volver</a>
+        <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            <i class="bi bi-check-circle me-1"></i>
+          }
+          {{ isEditMode() ? 'Guardar cambios' : 'Crear reserva' }}
         </button>
       </div>
-
     </form>
   </div>
 </div>

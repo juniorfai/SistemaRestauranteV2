@@ -1,47 +1,72 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
   <div>
-    <h2 class="fw-bold text-dark"><i class="bi bi-journal-richtext me-2 text-warning"></i>Carta del Restaurante</h2>
-    <p class="text-muted mb-0">Visualiza y gestiona los platos y bebidas disponibles en el menú central.</p>
+    <h2 class="fw-bold text-dark"><i class="bi bi-journal-richtext me-2 text-warning"></i>Carta del restaurante</h2>
+    <p class="text-muted mb-0">Platos y bebidas que se ofrecen a los clientes.</p>
   </div>
-  
-  <div class="btn-group shadow-sm">
-    <button (click)="cargarTodoElMenu()" class="btn btn-sm btn-dark">
-      Todos los Platillos
+  <a routerLink="/menu/nuevo" class="btn btn-warning shadow-sm">
+    <i class="bi bi-plus-lg me-2"></i>Nuevo plato
+  </a>
+</div>
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+  <button type="button" class="btn btn-sm" [class.btn-dark]="selectedCategory() === null"
+          [class.btn-outline-dark]="selectedCategory() !== null" (click)="selectedCategory.set(null)">
+    Todos
+  </button>
+  @for (c of categories; track c) {
+    <button type="button" class="btn btn-sm" [class.btn-dark]="selectedCategory() === c"
+            [class.btn-outline-dark]="selectedCategory() !== c" (click)="selectedCategory.set(c)">
+      {{ categoryLabels[c] }}
     </button>
+  }
+  <div class="form-check form-switch ms-auto">
+    <input id="show-unavailable" class="form-check-input" type="checkbox" [checked]="includeUnavailable()" (change)="toggleUnavailable()">
+    <label for="show-unavailable" class="form-check-label small">Mostrar no disponibles</label>
   </div>
 </div>
 
+@if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+  </div>
+}
+
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-  <div class="col" *ngFor="let plato of listaMenu">
-    <div class="card h-100 shadow-sm border-0 position-relative overflow-hidden">
-      
-      <div class="position-absolute top-0 end-0 m-2">
-        <span class="badge bg-success rounded-pill px-2 py-1">Disponible</span>
-      </div>
-
-      <div class="card-body d-flex flex-column p-4">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <h5 class="text-success fw-bold mb-0">${{ plato?.price | number:'1.0-2' }}</h5>
-        </div>
-
-        <h4 class="card-title fw-bold text-dark mb-2">{{ plato?.name }}</h4>
-        <p class="card-text text-muted flex-grow-1 small">{{ plato?.description }}</p>
-        
-        <hr class="text-muted my-3 opacity-25">
-        
-        <div class="d-flex justify-content-between align-items-center mt-auto">
-          <span class="text-xs text-muted fw-semibold">
-            <i class="bi bi-building me-1"></i>Sede #{{ plato?.restaurantId }}
-          </span>
-          <span class="text-xs text-secondary font-monospace">ID #{{ plato?.id }}</span>
+  @for (plato of visibleItems(); track plato.id) {
+    <div class="col">
+      <div class="card h-100 shadow-sm border-0" [class.opacity-50]="!plato.isAvailable">
+        <div class="card-body d-flex flex-column p-4">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-light text-dark border">{{ categoryLabels[plato.category] }}</span>
+            @if (plato.isAvailable) {
+              <span class="badge bg-success rounded-pill">Disponible</span>
+            } @else {
+              <span class="badge bg-secondary rounded-pill">No disponible</span>
+            }
+          </div>
+          <h4 class="card-title fw-bold text-dark mb-1">{{ plato.name }}</h4>
+          <h5 class="text-success fw-bold mb-2">{{ plato.price | currency }}</h5>
+          <p class="card-text text-muted flex-grow-1 small">{{ plato.description }}</p>
+          <div class="d-flex justify-content-end gap-1 mt-auto">
+            <a [routerLink]="['/menu/editar', plato.id]" class="btn btn-sm btn-outline-secondary" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" (click)="remove(plato)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="text-center py-5 my-5 text-muted" *ngIf="listaMenu.length === 0">
-  <i class="bi bi-egg-fried d-block fs-1 mb-3 text-secondary"></i>
-  <h5 class="fw-semibold">No hay platillos registrados en el sistema</h5>
-  <p class="small">Verifica que tu base de datos de .NET contenga datos en la tabla MenuItems.</p>
+  } @empty {
+    <div class="col-12 text-center py-5 text-muted">
+      @if (loading()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>Cargando la carta...
+      } @else {
+        <i class="bi bi-egg-fried d-block fs-1 mb-3"></i>
+        <h5 class="fw-semibold">No hay platos en esta categoría</h5>
+      }
+    </div>
+  }
 </div>

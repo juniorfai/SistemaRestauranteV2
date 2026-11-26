@@ -1,13 +1,20 @@
+export type TableStatus = 'Available' | 'Occupied' | 'Reserved' | 'OutOfService';
+
 export interface TableResponseDTO {
   id: number;
-  number: number;
+  tableNumber: number;
   capacity: number;
-  status: string; // O el tipo de dato que devuelva tu API (ej: numerico o texto)
-  restaurantId?: number;
+  location?: string | null;
+  status: TableStatus;
+  restaurantId: number;
+  restaurantName: string;
+  isAvailable: boolean;
 }
 
 export interface TableRequestDTO {
-  number: number;
+  tableNumber: number;
   capacity: number;
-  restaurantId?: number;
+  location?: string | null;
+  status: TableStatus;
+  restaurantId: number;
 }
