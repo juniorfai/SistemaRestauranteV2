@@ -1,9 +1,9 @@
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+<div class="page-header">
   <div>
-    <h2 class="fw-bold text-dark"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Mesas</h2>
-    <p class="text-muted mb-0">Capacidad, ubicación y estado de cada mesa del restaurante.</p>
+    <h2>Mesas</h2>
+    <p>Capacidad, ubicación y estado de cada mesa del restaurante.</p>
   </div>
-  <button type="button" class="btn btn-primary shadow-sm" (click)="openNew()">
+  <button type="button" class="btn btn-primary px-4" (click)="openNew()">
     <i class="bi bi-plus-lg me-2"></i>Nueva mesa
   </button>
 </div>
@@ -16,7 +16,7 @@
 }
 
 @if (editingId() !== null) {
-  <div class="card shadow-sm border-0 mb-4">
+  <div class="card mb-4">
     <div class="card-body">
       <h5 class="fw-bold mb-3">{{ editingId() ? 'Editar mesa' : 'Nueva mesa' }}</h5>
       <form [formGroup]="form" (ngSubmit)="save()" class="row g-3 align-items-end">
@@ -51,8 +51,8 @@
           </div>
         }
         <div class="col-12 d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-light border" (click)="closeForm()">Cancelar</button>
-          <button type="submit" class="btn btn-success" [disabled]="saving() || form.invalid">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeForm()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid">
             <i class="bi bi-save me-1"></i>Guardar
           </button>
         </div>
@@ -61,10 +61,10 @@
   </div>
 }
 
-<div class="card shadow-sm border-0">
-  <div class="card-body p-0 table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-dark">
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
         <tr>
           <th class="ps-4">Mesa</th>
           <th>Capacidad</th>
@@ -86,13 +86,13 @@
                   <option [value]="s" [selected]="s === mesa.status">{{ statusLabels[s] }}</option>
                 }
               </select>
-              <span class="badge ms-2 {{ statusBadges[mesa.status] }}">{{ statusLabels[mesa.status] }}</span>
+              <span class="ms-2 {{ statusBadges[mesa.status] }}">{{ statusLabels[mesa.status] }}</span>
             </td>
             <td class="text-end pe-4">
               <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="openEdit(mesa)">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" (click)="remove(mesa)">
+              <button type="button" class="btn btn-sm btn-state btn-state-cancel" title="Eliminar" (click)="remove(mesa)">
                 <i class="bi bi-trash"></i>
               </button>
             </td>

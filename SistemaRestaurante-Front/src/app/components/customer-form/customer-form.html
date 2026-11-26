@@ -1,9 +1,9 @@
-<div class="container mt-4" style="max-width: 600px;">
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-dark text-white p-3">
-      <h4 class="mb-0 fw-bold">
+<div class="mx-auto" style="max-width: 640px;">
+  <div class="card">
+    <div class="card-header">
+      <h4>
         <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-person-plus-fill'"></i>
-        {{ isEditMode ? 'Modificar Datos del Cliente' : 'Registrar Nuevo Cliente' }}
+        {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
       </h4>
     </div>
     <div class="card-body p-4">
@@ -51,8 +51,8 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-          <a routerLink="/clientes" class="btn btn-light border px-4">Cancelar</a>
-          <button type="submit" class="btn btn-success px-4" [disabled]="saving()">
+          <a routerLink="/clientes" class="btn btn-outline-secondary px-4">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
             <i class="bi bi-save me-2"></i>Guardar Cambios
           </button>
         </div>

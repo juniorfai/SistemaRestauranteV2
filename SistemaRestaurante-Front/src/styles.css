@@ -1,1 +1,233 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Tema visual de Restaurante Master.
+ * - Día   (data-bs-theme="light"): estilo nórdico, blanco y grises con azul petróleo.
+ * - Noche (data-bs-theme="dark"):  carbón con acentos ámbar, para salas con poca luz.
+ * Los componentes usan las variables --app-* y las clases de abajo; Bootstrap se ajusta con sus --bs-*.
+ */
+
+:root,
+[data-bs-theme='light'] {
+  --app-bg: #f6f7f9;
+  --app-surface: #ffffff;
+  --app-surface-2: #f0f2f5;
+  --app-sidebar: #ffffff;
+  --app-text: #14202b;
+  --app-muted: #6a7682;
+  --app-border: #e4e8ec;
+  --app-primary: #0e6e7e;
+  --app-primary-hover: #0b5a67;
+  --app-on-primary: #ffffff;
+  --app-primary-soft: #dcf1ee;
+  --app-primary-soft-text: #0b5a52;
+
+  --st-confirmed-bg: #dcf1ee;  --st-confirmed-tx: #0b5a52;
+  --st-pending-bg: #fdf0d5;    --st-pending-tx: #7a5200;
+  --st-cancelled-bg: #eceff2;  --st-cancelled-tx: #4f5963;
+  --st-completed-bg: #e3ecfa;  --st-completed-tx: #1f4a8a;
+  --st-danger-bg: #fbe1e1;     --st-danger-tx: #8f2626;
+
+  --bs-body-bg: var(--app-bg);
+  --bs-body-color: var(--app-text);
+  --bs-secondary-color: var(--app-muted);
+  --bs-border-color: var(--app-border);
+  --bs-link-color: var(--app-primary);
+  --bs-link-hover-color: var(--app-primary-hover);
+  --bs-link-color-rgb: 14, 110, 126;
+  --bs-primary-rgb: 14, 110, 126;
+  --bs-focus-ring-color: rgba(14, 110, 126, 0.25);
+  color-scheme: light;
+}
+
+[data-bs-theme='dark'] {
+  --app-bg: #16181d;
+  --app-surface: #1d2026;
+  --app-surface-2: #23272e;
+  --app-sidebar: #0f1115;
+  --app-text: #ece7df;
+  --app-muted: #8d939e;
+  --app-border: #2a2e36;
+  --app-primary: #f2a93b;
+  --app-primary-hover: #f5b85a;
+  --app-on-primary: #1a1205;
+  --app-primary-soft: #3d2e10;
+  --app-primary-soft-text: #f6c66b;
+
+  --st-confirmed-bg: #173a2a;  --st-confirmed-tx: #7fe0ae;
+  --st-pending-bg: #3d2e10;    --st-pending-tx: #f6c66b;
+  --st-cancelled-bg: #2a2e36;  --st-cancelled-tx: #a9afb8;
+  --st-completed-bg: #1b2d48;  --st-completed-tx: #9cc2f5;
+  --st-danger-bg: #3e1b1b;     --st-danger-tx: #f49b9b;
+
+  --bs-body-bg: var(--app-bg);
+  --bs-body-color: var(--app-text);
+  --bs-secondary-color: var(--app-muted);
+  --bs-border-color: var(--app-border);
+  --bs-tertiary-bg: var(--app-surface-2);
+  --bs-link-color: var(--app-primary);
+  --bs-link-hover-color: var(--app-primary-hover);
+  --bs-link-color-rgb: 242, 169, 59;
+  --bs-primary-rgb: 242, 169, 59;
+  --bs-focus-ring-color: rgba(242, 169, 59, 0.3);
+  color-scheme: dark;
+}
+
+/* ---------- Base ---------- */
+body {
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  background: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5 { font-weight: 600; color: var(--app-text); }
+
+.text-muted, .form-text { color: var(--app-muted) !important; }
+
+/* ---------- Encabezado de cada página ---------- */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.page-header h2 { font-size: 1.6rem; margin: 0; }
+.page-header p { margin: 0.15rem 0 0; color: var(--app-muted); }
+
+/* ---------- Tarjetas y tablas ---------- */
+.card {
+  --bs-card-bg: var(--app-surface);
+  --bs-card-border-color: var(--app-border);
+  --bs-card-cap-bg: var(--app-surface);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.card-header { border-bottom: 1px solid var(--app-border); padding: 1rem 1.25rem; }
+.card-header h4 { font-size: 1.2rem; margin: 0; }
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--app-text);
+  --bs-table-hover-bg: var(--app-surface-2);
+  --bs-table-hover-color: var(--app-text);
+  --bs-table-border-color: var(--app-border);
+  margin-bottom: 0;
+}
+.table > thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+  background: var(--app-surface-2);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  white-space: nowrap;
+}
+.table > tbody td { padding-top: 0.85rem; padding-bottom: 0.85rem; }
+
+/* Hora de la reserva: lo primero que se lee durante el servicio */
+.time-big { font-size: 1.35rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.time-date { font-size: 0.8rem; color: var(--app-muted); }
+
+/* ---------- Botones (táctiles: mínimo 40px de alto) ---------- */
+.btn { min-height: 40px; border-radius: 8px; font-weight: 500; }
+.btn-sm { min-height: 36px; min-width: 36px; }
+
+.btn-primary {
+  --bs-btn-bg: var(--app-primary);
+  --bs-btn-border-color: var(--app-primary);
+  --bs-btn-color: var(--app-on-primary);
+  --bs-btn-hover-bg: var(--app-primary-hover);
+  --bs-btn-hover-border-color: var(--app-primary-hover);
+  --bs-btn-hover-color: var(--app-on-primary);
+  --bs-btn-active-bg: var(--app-primary-hover);
+  --bs-btn-active-border-color: var(--app-primary-hover);
+  --bs-btn-active-color: var(--app-on-primary);
+  --bs-btn-disabled-bg: var(--app-primary);
+  --bs-btn-disabled-border-color: var(--app-primary);
+  --bs-btn-disabled-color: var(--app-on-primary);
+}
+
+.btn-outline-secondary, .btn-light {
+  --bs-btn-color: var(--app-text);
+  --bs-btn-bg: var(--app-surface);
+  --bs-btn-border-color: var(--app-border);
+  --bs-btn-hover-color: var(--app-text);
+  --bs-btn-hover-bg: var(--app-surface-2);
+  --bs-btn-hover-border-color: var(--app-border);
+  --bs-btn-active-color: var(--app-text);
+  --bs-btn-active-bg: var(--app-surface-2);
+  --bs-btn-active-border-color: var(--app-border);
+}
+
+/* Botones de acción por estado, con el mismo color que su estado */
+.btn-state { border: 1px solid transparent; }
+.btn-state-confirm  { background: var(--st-confirmed-bg); color: var(--st-confirmed-tx); }
+.btn-state-complete { background: var(--st-completed-bg); color: var(--st-completed-tx); }
+.btn-state-noshow   { background: var(--st-pending-bg);   color: var(--st-pending-tx); }
+.btn-state-cancel   { background: var(--st-danger-bg);    color: var(--st-danger-tx); }
+.btn-state:hover { filter: brightness(0.96); border-color: currentColor; }
+
+/* Segmentos (filtros tipo pestaña) */
+.segmented { display: inline-flex; background: var(--app-surface-2); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.segmented button {
+  border: 0; background: transparent; color: var(--app-muted);
+  min-height: 36px; padding: 0 14px; border-radius: 7px; font-weight: 500;
+}
+.segmented button.active { background: var(--app-surface); color: var(--app-text); box-shadow: 0 0 0 1px var(--app-border); }
+
+/* ---------- Estados (mismo color en toda la app) ---------- */
+.status-pill {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.status-confirmed { background: var(--st-confirmed-bg); color: var(--st-confirmed-tx); }
+.status-pending   { background: var(--st-pending-bg);   color: var(--st-pending-tx); }
+.status-cancelled { background: var(--st-cancelled-bg); color: var(--st-cancelled-tx); }
+.status-completed { background: var(--st-completed-bg); color: var(--st-completed-tx); }
+.status-danger    { background: var(--st-danger-bg);    color: var(--st-danger-tx); }
+
+.tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: var(--app-surface-2);
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
+  white-space: nowrap;
+}
+
+.text-price { color: var(--app-primary); font-weight: 600; }
+.text-note { color: var(--st-completed-tx); }
+
+/* ---------- Formularios ---------- */
+.form-control, .form-select {
+  min-height: 42px;
+  border-radius: 8px;
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
+}
+.form-label { font-weight: 500; }
+.form-check-input:checked { background-color: var(--app-primary); border-color: var(--app-primary); }
+
+.alert-danger {
+  --bs-alert-bg: var(--st-danger-bg);
+  --bs-alert-color: var(--st-danger-tx);
+  --bs-alert-border-color: transparent;
+}
+
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--app-muted); }
+.empty-state i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
