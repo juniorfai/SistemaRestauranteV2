@@ -1,50 +1,64 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; // 1. Agregamos ChangeDetectorRef
-import { CommonModule } from '@angular/common';
-import { MenuItemResponseDTO } from '../../models/menu.model';
-import { MenuService } from '../../services/menu';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { MenuItemCategory, MenuItemResponseDTO } from '../../models/menu.model';
+import { MenuService } from '../../services/menu.service';
+import { apiErrorMessage } from '../../utils/api-error';
+import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
 
 @Component({
   selector: 'app-menu-list',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './menu-list.html'
+  imports: [CurrencyPipe, RouterLink],
+  templateUrl: './menu-list.html',
 })
 export class MenuListComponent implements OnInit {
-  listaCompleta: MenuItemResponseDTO[] = []; 
-  listaMenu: MenuItemResponseDTO[] = [];    
-  categoriaSeleccionada: string = 'Todos';
+  private readonly menuService = inject(MenuService);
 
-  // 2. Inyectamos cdr en el constructor
-  constructor(private menuService: MenuService, private cdr: ChangeDetectorRef) {}
+  readonly categories = MENU_CATEGORIES;
+  readonly categoryLabels = MENU_CATEGORY_LABELS;
+
+  readonly items = signal<MenuItemResponseDTO[]>([]);
+  readonly selectedCategory = signal<MenuItemCategory | null>(null);
+  readonly includeUnavailable = signal(false);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly visibleItems = computed(() => {
+    const category = this.selectedCategory();
+    return category ? this.items().filter((i) => i.category === category) : this.items();
+  });
 
   ngOnInit(): void {
-    this.cargarTodoElMenu();
+    this.load();
   }
 
-  cargarTodoElMenu(): void {
-    this.categoriaSeleccionada = 'Todos';
-    this.menuService.getMenuItems().subscribe({
-      next: (datos) => {
-        this.listaCompleta = datos;
-        this.listaMenu = datos;
-        
-        // 3. Forzamos a Angular a redibujar el HTML con los nuevos datos recibidos
-        this.cdr.detectChanges(); 
+  load(): void {
+    this.loading.set(true);
+    this.menuService.getMenuItems(this.includeUnavailable()).subscribe({
+      next: (data) => {
+        this.items.set(data);
+        this.loading.set(false);
       },
-      error: (err) => console.error('Error al cargar la carta:', err)
+      error: (err) => {
+        this.error.set(apiErrorMessage(err, 'No se pudo cargar la carta.'));
+        this.loading.set(false);
+      },
     });
   }
 
-  filtrarPorCategoria(categoria: string): void {
-    this.categoriaSeleccionada = categoria;
-    
-    this.listaMenu = this.listaCompleta.filter(plato => {
-      // Simplificamos la lectura de la categoría de forma segura
-      const catPlato = plato?.category || '';
-      return catPlato.toLowerCase().trim() === categoria.toLowerCase().trim();
+  toggleUnavailable(): void {
+    this.includeUnavailable.update((v) => !v);
+    this.load();
+  }
+
+  remove(item: MenuItemResponseDTO): void {
+    if (!confirm(`¿Eliminar "${item.name}" de la carta?`)) {
+      return;
+    }
+    this.menuService.deleteMenuItem(item.id).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(apiErrorMessage(err)),
     });
-    
-    // También notificamos el cambio al filtrar localmente
-    this.cdr.detectChanges();
   }
 }

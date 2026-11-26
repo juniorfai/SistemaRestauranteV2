@@ -1,22 +1,25 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 shadow-sm mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center fw-bold text-warning" href="#">
-      <i class="bi bi-egg-animated me-2 fs-4"></i> Restaurante Master
+<nav class="navbar navbar-expand navbar-dark bg-dark px-3 shadow-sm mb-4">
+  <div class="container-fluid flex-wrap gap-2">
+    <a class="navbar-brand d-flex align-items-center fw-bold text-warning" routerLink="/reservas">
+      <i class="bi bi-egg-fried me-2 fs-4"></i> Restaurante Master
     </a>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-1">
+      <a routerLink="/reservas" routerLinkActive="active" class="btn btn-outline-light border-0">
+        <i class="bi bi-calendar-check me-1"></i>Reservas
+      </a>
       <a routerLink="/mesas" routerLinkActive="active" class="btn btn-outline-light border-0">
-        <i class="bi bi-grid-3x3-gap me-2"></i>Control de Mesas
+        <i class="bi bi-grid-3x3-gap me-1"></i>Mesas
       </a>
       <a routerLink="/clientes" routerLinkActive="active" class="btn btn-outline-light border-0">
-        <i class="bi bi-people me-2"></i>Gestión de Clientes
+        <i class="bi bi-people me-1"></i>Clientes
       </a>
       <a routerLink="/menu" routerLinkActive="active" class="btn btn-outline-light border-0">
-        <i class="bi bi-journal-richtext me-2"></i>Carta del Menú
+        <i class="bi bi-journal-richtext me-1"></i>Carta
       </a>
     </div>
   </div>
 </nav>
 
-<div class="container">
+<main class="container pb-5">
   <router-outlet></router-outlet>
-</div>
+</main>
