@@ -83,3 +83,29 @@ export interface UpdateOrderItemDTO {
   notes?: string | null;
   course: OrderCourse;
 }
+
+// ---------- Pantalla de cocina ----------
+
+export interface KitchenTicketItemDTO {
+  id: number;
+  name: string;
+  quantity: number;
+  notes?: string | null;
+  course: OrderCourse;
+  /** Held (espera a que el camarero lo marche), Sent, Preparing o Ready. */
+  status: OrderItemStatus;
+  sentAt?: string | null;
+}
+
+/** Comanda de una zona: los platos de una cuenta que prepara esa zona. */
+export interface KitchenTicketDTO {
+  orderId: number;
+  tableNumber: number;
+  waiterName: string;
+  guests: number;
+  stationId: number;
+  stationName: string;
+  /** UTC en ISO. */
+  firstSentAt: string;
+  items: KitchenTicketItemDTO[];
+}

@@ -44,6 +44,21 @@
     <router-outlet></router-outlet>
   </main>
 </div>
+
+<div class="ready-toasts" aria-live="polite">
+  @for (t of readyToasts(); track t.id) {
+    <div class="ready-toast" role="status">
+      <button type="button" class="ready-toast-body" (click)="openToast(t)">
+        <i class="bi bi-bell-fill" aria-hidden="true"></i>
+        <span>
+          <strong>Mesa {{ t.tableNumber }}: listo para servir</strong>
+          <span class="d-block small">{{ t.items.join(', ') }}</span>
+        </span>
+      </button>
+      <button type="button" class="btn-close" aria-label="Cerrar aviso" (click)="dismissToast(t.id)"></button>
+    </div>
+  }
+</div>
 } @else {
   <router-outlet></router-outlet>
 }

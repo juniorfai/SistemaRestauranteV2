@@ -64,12 +64,12 @@ namespace SistemaRestaurante.Domain.Interfaces.Services
         Task<IEnumerable<OrderItem>> GetKitchenItemsAsync(int? stationId);
     }
 
-    /// <summary>
-    /// Avisos en tiempo real a las pantallas (cocina, sala). La implementación con SignalR llega
-    /// en la siguiente fase; mientras, no hace nada.
-    /// </summary>
+    /// <summary>Avisos en tiempo real a las pantallas de cocina y sala del restaurante.</summary>
     public interface IOrderNotifier
     {
         Task OrderChangedAsync(int restaurantId, int orderId);
+
+        /// <summary>Cocina dejó platos listos: el camarero de la mesa recibe el aviso.</summary>
+        Task ItemsReadyAsync(int restaurantId, int orderId, int tableNumber, int waiterId, IReadOnlyList<string> items);
     }
 }

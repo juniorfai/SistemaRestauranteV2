@@ -62,7 +62,7 @@ namespace SistemaRestaurante.DataAccess.Repositories
 
         public Task<OrderItem?> GetItemAsync(int orderId, int itemId) =>
             _context.OrderItems
-                .Include(i => i.Order)
+                .Include(i => i.Order).ThenInclude(o => o.Table)
                 .FirstOrDefaultAsync(i => i.IsActive && i.Id == itemId && i.OrderId == orderId && i.Order.IsActive);
 
         public async Task<Order> CreateAsync(Order order)

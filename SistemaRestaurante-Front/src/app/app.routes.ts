@@ -3,7 +3,7 @@ import { authGuard, guestGuard, homeRedirect, roleGuard } from './auth/auth.guar
 import { AccountComponent } from './components/account/account';
 import { LoginComponent } from './components/login/login';
 import { UserListComponent } from './components/user-list/user-list';
-import { MANAGEMENT_ROLES, RESTAURANT_ROLES } from './services/auth.service';
+import { KITCHEN_SCREEN_ROLES, MANAGEMENT_ROLES, RESTAURANT_ROLES } from './services/auth.service';
 import { RestaurantListComponent } from './components/restaurant-list/restaurant-list';
 import { RestaurantSettingsComponent } from './components/restaurant-settings/restaurant-settings';
 import { CustomerFormComponent } from './components/customer-form/customer-form';
@@ -35,6 +35,8 @@ export const routes: Routes = [
 
       { path: 'sala', component: FloorComponent, title: 'Sala', canActivate: [roleGuard], data: staff },
       { path: 'sala/cuenta/:id', component: OrderDetailComponent, title: 'Cuenta', canActivate: [roleGuard], data: staff },
+
+      { path: 'cocina', loadComponent: () => import('./components/kitchen/kitchen').then((m) => m.KitchenComponent), title: 'Cocina', canActivate: [roleGuard], data: { roles: KITCHEN_SCREEN_ROLES } },
 
       { path: 'reservas', component: ReservationListComponent, title: 'Reservas', canActivate: [roleGuard], data: staff },
       { path: 'reservas/nueva', component: ReservationFormComponent, title: 'Nueva reserva', canActivate: [roleGuard], data: staff },

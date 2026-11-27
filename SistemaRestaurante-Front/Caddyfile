@@ -35,6 +35,12 @@
 
 	log {
 		output stdout
-		format console
+		# El tiempo real (SignalR) lleva el token en la URL (?access_token=): no se guarda en el log.
+		format filter {
+			request>uri query {
+				replace access_token REDACTED
+			}
+			wrap console
+		}
 	}
 }

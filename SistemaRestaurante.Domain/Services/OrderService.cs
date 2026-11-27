@@ -237,6 +237,8 @@ namespace SistemaRestaurante.Domain.Services
             ApplyStatus(item, newStatus, DateTime.UtcNow);
             await _orders.SaveAsync();
             await NotifyAsync(item.Order);
+            if (newStatus == OrderItemStatus.Ready)
+                await NotifyReadyAsync(item.Order, new[] { item });
             return item;
         }
 
@@ -256,6 +258,7 @@ namespace SistemaRestaurante.Domain.Services
             // Solo cambian los platos: así cocina no choca con el camarero que sigue apuntando.
             await _orders.SaveAsync();
             await NotifyAsync(order);
+            await NotifyReadyAsync(order, pending);
             return await GetAsync(order.Id);
         }
 
@@ -450,6 +453,10 @@ namespace SistemaRestaurante.Domain.Services
 
         private Task NotifyAsync(Order order) => _notifier.OrderChangedAsync(order.RestaurantId, order.Id);
 
+        private Task NotifyReadyAsync(Order order, IEnumerable<OrderItem> items) =>
+            _notifier.ItemsReadyAsync(order.RestaurantId, order.Id, order.Table?.TableNumber ?? 0, order.WaiterId,
+                items.Select(i => i.Quantity > 1 ? $"{i.Quantity} x {i.Name}" : i.Name).ToList());
+
         private static OrderItem NewItem(Order order, MenuItem menuItem, int quantity, string? notes,
             OrderCourse? course, Guid? clientRequestId, decimal unitPrice) => new()
         {
@@ -538,9 +545,12 @@ namespace SistemaRestaurante.Domain.Services
         }
     }
 
-    /// <summary>Avisos desactivados (hasta que llegue el tiempo real con SignalR).</summary>
+    /// <summary>Sin avisos (procesos sin pantallas conectadas).</summary>
     public class NoOpOrderNotifier : IOrderNotifier
     {
         public Task OrderChangedAsync(int restaurantId, int orderId) => Task.CompletedTask;
+
+        public Task ItemsReadyAsync(int restaurantId, int orderId, int tableNumber, int waiterId, IReadOnlyList<string> items) =>
+            Task.CompletedTask;
     }
 }

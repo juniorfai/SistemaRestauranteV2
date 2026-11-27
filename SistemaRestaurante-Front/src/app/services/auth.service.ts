@@ -25,6 +25,9 @@ export const MANAGEMENT_ROLES: UserRole[] = ['Admin', 'Manager'];
 /** Todo el personal de un restaurante (el administrador de la plataforma no trabaja en ninguno). */
 export const RESTAURANT_ROLES: UserRole[] = ['Admin', 'Manager', 'Staff'];
 
+/** Pueden abrir la pantalla de cocina: cocina y, para echar un vistazo, el resto del restaurante. */
+export const KITCHEN_SCREEN_ROLES: UserRole[] = [...RESTAURANT_ROLES, 'Kitchen'];
+
 /**
  * Sesión del usuario. El token se guarda en localStorage para que la sesión sobreviva a una
  * recarga de la tableta del restaurante; caduca según lo que diga la API (por defecto 12 h).
@@ -51,7 +54,7 @@ export class AuthService {
     switch (this.user()?.role) {
       case 'PlatformAdmin': return '/restaurantes';
       case 'Staff': return '/sala';
-      case 'Kitchen': return '/cuenta'; // la pantalla de cocina llega con el tiempo real
+      case 'Kitchen': return '/cocina';
       default: return '/reservas';
     }
   });
