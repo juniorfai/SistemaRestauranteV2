@@ -30,7 +30,9 @@ SistemaRestaurante.slnx
 ├── SistemaRestaurante.Domain/       Entidades, reglas de negocio (servicios) e interfaces
 ├── SistemaRestaurante.DataAccess/   DbContext, repositorios, migraciones y datos de ejemplo
 ├── SistemaRestaurante.Tests/        Pruebas de integración de la API (xUnit + SQL Server)
-└── SistemaRestaurante-Front/        Aplicación Angular
+├── SistemaRestaurante-Front/        Aplicación Angular (+ Dockerfile y Caddyfile del servidor web)
+├── docker-compose.yml               Producción: SQL Server + API + web con HTTPS
+└── scripts/backup.sh                Copia de seguridad de la base de datos
 ```
 
 ## Requisitos
@@ -72,6 +74,68 @@ npm start
 
 Abre `http://localhost:4200`. La URL de la API se configura en `src/environments/environment.development.ts`.
 
+## Despliegue en producción (Docker)
+
+Todo funciona con **Docker Compose** en un único servidor:
+
+| Servicio | Qué es | Expuesto |
+|---|---|---|
+| `web` | [Caddy](https://caddyserver.com) con la aplicación Angular; reenvía `/api/*` a la API y obtiene y renueva solo el certificado HTTPS | Puertos 80 y 443 |
+| `api` | La API .NET 8 (usuario sin privilegios, comprobación de salud en `/api/health`) | No, solo red interna |
+| `db` | SQL Server 2022 **Express** (gratuita en producción, hasta 10 GB por base) | No, solo red interna |
+
+### Servidor
+
+- Linux con Docker (por ejemplo, un VPS de Hetzner, DigitalOcean, OVH o Azure/AWS). Mínimo **2 GB de RAM** (SQL Server los necesita) y 2 vCPU; 4 GB si vas a tener muchos restaurantes.
+- Un dominio o subdominio (p. ej. `reservas.midominio.com`) con un registro DNS **A** apuntando a la IP del servidor.
+- Puertos **80** y **443** abiertos en el cortafuegos.
+
+### Primera instalación
+
+```bash
+git clone https://github.com/juniorfai/SistemaRestauranteV2.git restaurante
+cd restaurante
+cp .env.example .env
+nano .env        # SITE_ADDRESS=tu dominio, DB_PASSWORD, JWT_KEY, PLATFORM_ADMIN_PASSWORD
+docker compose up -d --build
+docker compose ps   # los tres servicios deben aparecer como "healthy" / "running"
+```
+
+Al arrancar, la API aplica las migraciones y crea el administrador de la plataforma. Entra en `https://tu-dominio` con ese usuario, **cambia su contraseña** en «Mi cuenta» y da de alta el primer restaurante.
+
+Para probarlo en tu ordenador antes de contratar nada: deja `SITE_ADDRESS=:80` (y `HTTP_PORT=8080` si el 80 está ocupado) y abre `http://localhost` (o `http://localhost:8080`).
+
+### Actualizar a una versión nueva
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Las migraciones nuevas se aplican solas al arrancar la API. Haz una copia de seguridad antes.
+
+### Copias de seguridad
+
+```bash
+./scripts/backup.sh     # deja un .bak en backups/ y borra los de más de 14 días
+```
+
+Prográmalo a diario con `crontab -e` → `0 4 * * * cd /ruta/restaurante && ./scripts/backup.sh` y copia la carpeta `backups/` fuera del servidor. Para restaurar una copia:
+
+```bash
+docker compose stop api
+docker compose cp backups/RestauranteMaster-AAAAMMDD-HHMMSS.bak db:/var/opt/mssql/restore.bak
+docker compose exec db sh -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -Q "RESTORE DATABASE [RestauranteMaster] FROM DISK = N'"'"'/var/opt/mssql/restore.bak'"'"' WITH REPLACE"'
+docker compose exec db rm /var/opt/mssql/restore.bak
+docker compose start api
+```
+
+### Mantenimiento
+
+- Registros: `docker compose logs -f api` (o `web`, `db`).
+- Estado: `curl https://tu-dominio/api/health` responde `Healthy` si la API y la base funcionan.
+- Los datos viven en volúmenes de Docker (`db-data`, y los certificados en `caddy-data`): `docker compose down` no los borra; `docker compose down -v` **sí**.
+
 ## Pruebas
 
 ### Backend
@@ -102,6 +166,7 @@ GitHub Actions (`.github/workflows/ci.yml`) se ejecuta en cada pull request y en
 
 - **Backend:** compila la solución, comprueba que no falte ninguna migración (`has-pending-model-changes`) y pasa las pruebas contra un SQL Server 2022 en contenedor.
 - **Frontend:** `npm ci`, compilación de producción y pruebas.
+- **Docker:** construye las imágenes, levanta `docker-compose.yml` completo y comprueba que la web y la API responden.
 
 Conviene activar en GitHub la protección de `main` (Settings → Branches) exigiendo que los dos trabajos pasen antes de fusionar.
 
@@ -116,6 +181,7 @@ Conviene activar en GitHub la protección de `main` (Settings → Branches) exig
 | `Jwt:Key` | Clave secreta para firmar las sesiones (mínimo 32 caracteres) | Clave de desarrollo | Variable `Jwt__Key`, larga y aleatoria. **Obligatoria** |
 | `Jwt:ExpiresMinutes` | Duración de la sesión | 720 (12 h) | 720 |
 | `Auth:LoginAttemptsPerMinute` | Intentos de login por minuto y por IP | 10 | 10 |
+| `ReverseProxy:Enabled` | La API está detrás de un proxy (toma la IP real de `X-Forwarded-For` y deja el HTTPS al proxy). No exponer la API directamente con esto activado | `false` | `true` en docker-compose |
 | `Auth:PlatformAdmin:Username` / `FullName` / `Password` | Administrador de la plataforma, se crea al arrancar si todavía no existe ninguno | `plataforma` / `Plataforma123!` | Variables `Auth__PlatformAdmin__Username` y `Auth__PlatformAdmin__Password`; cambia la contraseña tras el primer acceso y después puedes quitar las variables |
 
 Las fechas de las reservas se guardan en la **hora local del restaurante**.
@@ -146,6 +212,3 @@ Los errores siguen el formato **ProblemDetails**: `401` sin sesión válida, `40
 
 Hay ejemplos listos para ejecutar en `SistemaRestaurante.API/SistemaRestaurante.API.http`.
 
-## Pendiente (siguientes fases)
-
-- Despliegue (Docker y hosting).

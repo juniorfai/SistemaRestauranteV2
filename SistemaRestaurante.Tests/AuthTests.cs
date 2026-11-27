@@ -54,6 +54,14 @@ namespace SistemaRestaurante.Tests
         }
 
         [Fact]
+        public async Task Health_check_is_public_and_checks_the_database()
+        {
+            using var response = await _api.Anonymous().GetAsync("/api/health");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("Healthy", await response.Content.ReadAsStringAsync());
+        }
+
+        [Fact]
         public async Task Forged_token_is_rejected()
         {
             var client = _api.Anonymous();
@@ -112,15 +120,38 @@ namespace SistemaRestaurante.Tests
             _api = api;
         }
 
-        [Fact]
-        public async Task Too_many_login_attempts_return_429()
+        private ApiClient ClientFrom(string ip)
         {
             var client = _api.Anonymous();
+            client.Http.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
+            return client;
+        }
+
+        [Fact]
+        public async Task Too_many_login_attempts_from_one_ip_return_429_without_blocking_others()
+        {
+            var attacker = ClientFrom("203.0.113.10");
             var body = new { username = "nadie", password = "nada" };
             for (var i = 0; i < StrictLoginApiFactory.Limit; i++)
-                await HttpAssert.StatusAsync(HttpStatusCode.Unauthorized, client.PostAsync("/api/Auth/login", body));
+                await HttpAssert.StatusAsync(HttpStatusCode.Unauthorized, attacker.PostAsync("/api/Auth/login", body));
 
-            await HttpAssert.StatusAsync(HttpStatusCode.TooManyRequests, client.PostAsync("/api/Auth/login", body));
+            await HttpAssert.StatusAsync(HttpStatusCode.TooManyRequests, attacker.PostAsync("/api/Auth/login", body));
+
+            // Detrás del proxy cada cliente tiene su propio límite: otro restaurante sigue pudiendo entrar.
+            await HttpAssert.StatusAsync(HttpStatusCode.Unauthorized, ClientFrom("198.51.100.20").PostAsync("/api/Auth/login", body));
+        }
+
+        [Fact]
+        public async Task Spoofed_forwarded_header_does_not_bypass_the_limit()
+        {
+            // El proxy añade la IP real al final; las que mande el cliente delante se ignoran.
+            var body = new { username = "nadie", password = "nada" };
+            for (var i = 0; i < StrictLoginApiFactory.Limit; i++)
+                await HttpAssert.StatusAsync(HttpStatusCode.Unauthorized,
+                    ClientFrom($"10.0.0.{i}, 192.0.2.50").PostAsync("/api/Auth/login", body));
+
+            await HttpAssert.StatusAsync(HttpStatusCode.TooManyRequests,
+                ClientFrom("10.0.0.99, 192.0.2.50").PostAsync("/api/Auth/login", body));
         }
     }
 }

@@ -1,0 +1,73 @@
+# Restaurante Master en producción (o para probarlo en local): base de datos, API y web.
+#
+#   1. cp .env.example .env   y rellena los valores
+#   2. docker compose up -d --build
+#
+# Solo el servicio "web" (Caddy) se publica a internet; la API y SQL Server quedan en la red interna.
+name: restaurante-master
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      # Express es gratuita también en producción (límite de 10 GB por base, de sobra para reservas).
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    volumes:
+      - db-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: SistemaRestaurante.API/Dockerfile
+    image: restaurante-master/api:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db;Database=${DB_NAME:-RestauranteMaster};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true"
+      Jwt__Key: ${JWT_KEY:?Falta JWT_KEY en .env (mínimo 32 caracteres)}
+      # Una sola instancia de la API: puede aplicar las migraciones al arrancar.
+      Database__ApplyMigrationsOnStartup: "true"
+      Database__SeedDemoData: "${SEED_DEMO_DATA:-false}"
+      Auth__PlatformAdmin__Username: ${PLATFORM_ADMIN_USER:-}
+      Auth__PlatformAdmin__FullName: ${PLATFORM_ADMIN_NAME:-Administración}
+      Auth__PlatformAdmin__Password: ${PLATFORM_ADMIN_PASSWORD:-}
+      # Está detrás de Caddy: la IP real del cliente llega en X-Forwarded-For.
+      ReverseProxy__Enabled: "true"
+      TZ: ${TZ:-Europe/Madrid}
+
+  web:
+    build:
+      context: SistemaRestaurante-Front
+    image: restaurante-master/web:latest
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      # ":80" para probar en local; tu dominio (p. ej. reservas.midominio.com) para HTTPS automático.
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      API_UPSTREAM: api:8080
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    volumes:
+      # Certificados de Let's Encrypt: no se pierden al recrear el contenedor.
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

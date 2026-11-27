@@ -26,6 +26,9 @@ namespace SistemaRestaurante.Tests.Infrastructure
         /// <summary>Intentos de login por minuto; alto para no molestar al resto de pruebas.</summary>
         protected virtual int LoginAttemptsPerMinute => 10_000;
 
+        /// <summary>Simula estar detrás del proxy inverso (cabeceras X-Forwarded-*).</summary>
+        protected virtual bool BehindProxy => false;
+
         public ApiFactory()
         {
             var server = Environment.GetEnvironmentVariable("TEST_SQLSERVER");
@@ -49,6 +52,7 @@ namespace SistemaRestaurante.Tests.Infrastructure
             builder.UseSetting("Auth:PlatformAdmin:FullName", "Plataforma (pruebas)");
             builder.UseSetting("Auth:PlatformAdmin:Password", PlatformPassword);
             builder.UseSetting("Auth:LoginAttemptsPerMinute", LoginAttemptsPerMinute.ToString());
+            builder.UseSetting("ReverseProxy:Enabled", BehindProxy ? "true" : "false");
         }
 
         /// <summary>Cliente sin sesión.</summary>
@@ -115,10 +119,13 @@ namespace SistemaRestaurante.Tests.Infrastructure
         }
     }
 
-    /// <summary>Igual que <see cref="ApiFactory"/> pero con el límite de login real (pocos intentos).</summary>
+    /// <summary>
+    /// Con pocos intentos de login y detrás del proxy, como en producción con docker-compose.
+    /// </summary>
     public class StrictLoginApiFactory : ApiFactory
     {
         public const int Limit = 3;
         protected override int LoginAttemptsPerMinute => Limit;
+        protected override bool BehindProxy => true;
     }
 }

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -167,7 +168,28 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
+// Comprobación de salud para Docker y el hosting: la API responde y la base de datos está accesible.
+builder.Services.AddHealthChecks().AddDbContextCheck<RestaurantDbContext>("database");
+
+// Detrás de un proxy inverso (Caddy en docker-compose) la IP del cliente y el https llegan en
+// cabeceras X-Forwarded-*. Solo se activa con ReverseProxy:Enabled y la API no debe quedar
+// expuesta directamente: se confía en el último salto, que es el proxy.
+var behindProxy = builder.Configuration.GetValue<bool>("ReverseProxy:Enabled");
+if (behindProxy)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+if (behindProxy)
+    app.UseForwardedHeaders();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -177,12 +199,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Con proxy, el https lo pone el proxy.
+if (!behindProxy)
+    app.UseHttpsRedirection();
 app.UseCors(FrontendCorsPolicy);
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/api/health").AllowAnonymous();
 
 // Migraciones y datos de ejemplo: solo si la configuración lo pide (activado en Development).
 using (var scope = app.Services.CreateScope())

@@ -1,0 +1,40 @@
+# SITE_ADDRESS: ":80" para probar en local (solo http) o el dominio, p. ej. "reservas.midominio.com",
+# para que Caddy pida y renueve solo el certificado HTTPS de Let's Encrypt.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# La API va por el mismo dominio, así el navegador no necesita CORS.
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# Swagger solo existe en Development; en producción no se expone.
+	handle {
+		root * /srv
+		# Aplicación de una sola página: cualquier ruta que no sea un fichero carga index.html.
+		try_files {path} /index.html
+		file_server
+
+		# Los ficheros con hash en el nombre no cambian nunca; index.html siempre se revalida.
+		# Angular los genera como main-ABCD1234.js o media/fuente-ABCD1234.woff2.
+		@hashed path_regexp -[0-9A-Z]{8}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		# El resto (index.html, también en rutas internas como /reservas) se revalida siempre,
+		# así tras una actualización nadie se queda con la versión anterior.
+		@nothashed not path_regexp -[0-9A-Z]{8}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$
+		header @nothashed Cache-Control "no-cache"
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
