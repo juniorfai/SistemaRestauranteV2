@@ -140,7 +140,8 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Límite de intentos de login por IP, contra ataques de fuerza bruta.
+// Límite de intentos de login por IP, contra ataques de fuerza bruta (Auth:LoginAttemptsPerMinute, 10 por defecto).
+var loginAttemptsPerMinute = builder.Configuration.GetValue("Auth:LoginAttemptsPerMinute", 10);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -149,7 +150,7 @@ builder.Services.AddRateLimiter(options =>
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = loginAttemptsPerMinute,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

@@ -29,6 +29,7 @@ SistemaRestaurante.slnx
 ├── SistemaRestaurante.API/          Controladores, DTOs, AutoMapper, middleware de errores
 ├── SistemaRestaurante.Domain/       Entidades, reglas de negocio (servicios) e interfaces
 ├── SistemaRestaurante.DataAccess/   DbContext, repositorios, migraciones y datos de ejemplo
+├── SistemaRestaurante.Tests/        Pruebas de integración de la API (xUnit + SQL Server)
 └── SistemaRestaurante-Front/        Aplicación Angular
 ```
 
@@ -71,6 +72,39 @@ npm start
 
 Abre `http://localhost:4200`. La URL de la API se configura en `src/environments/environment.development.ts`.
 
+## Pruebas
+
+### Backend
+
+```bash
+dotnet test SistemaRestaurante.Tests
+```
+
+Son pruebas de integración: cada clase levanta la API completa en memoria contra una base de SQL Server **propia y vacía** (`SistemaRestaurante_Test_<guid>`), creada con las migraciones reales y borrada al terminar. Nunca tocan la base de desarrollo. Cubren:
+
+- **Separación entre restaurantes:** listados, lectura y modificación de datos ajenos (`404`), reservas con mesas, clientes o platos de otro restaurante, personal ajeno.
+- **Permisos por rol** (administrador, encargado, camarero) y del administrador de la plataforma, incluida la suspensión de restaurantes.
+- **Sesión:** token falso, cambio de contraseña y usuario desactivado cierran sesiones, límite de intentos de login.
+- **Reservas:** choque de horario (2 h), peticiones simultáneas a la misma mesa (solo una se guarda), capacidad, mesas fuera de servicio, fechas pasadas, cambios de estado, total del pedido anticipado.
+
+Por defecto usan LocalDB. Para otro servidor, define `TEST_SQLSERVER` con la cadena de conexión **sin** base de datos, por ejemplo `Server=localhost,1433;User Id=sa;Password=...;TrustServerCertificate=True`.
+
+### Frontend
+
+```bash
+cd SistemaRestaurante-Front
+npx ng test --watch=false
+```
+
+### Integración continua
+
+GitHub Actions (`.github/workflows/ci.yml`) se ejecuta en cada pull request y en cada push a `main`:
+
+- **Backend:** compila la solución, comprueba que no falte ninguna migración (`has-pending-model-changes`) y pasa las pruebas contra un SQL Server 2022 en contenedor.
+- **Frontend:** `npm ci`, compilación de producción y pruebas.
+
+Conviene activar en GitHub la protección de `main` (Settings → Branches) exigiendo que los dos trabajos pasen antes de fusionar.
+
 ## Configuración
 
 | Clave | Para qué sirve | Desarrollo | Producción |
@@ -81,6 +115,7 @@ Abre `http://localhost:4200`. La URL de la API se configura en `src/environments
 | `Database:SeedDemoData` | Cargar datos de ejemplo y el personal de prueba del primer restaurante si la base está vacía | `true` | `false` |
 | `Jwt:Key` | Clave secreta para firmar las sesiones (mínimo 32 caracteres) | Clave de desarrollo | Variable `Jwt__Key`, larga y aleatoria. **Obligatoria** |
 | `Jwt:ExpiresMinutes` | Duración de la sesión | 720 (12 h) | 720 |
+| `Auth:LoginAttemptsPerMinute` | Intentos de login por minuto y por IP | 10 | 10 |
 | `Auth:PlatformAdmin:Username` / `FullName` / `Password` | Administrador de la plataforma, se crea al arrancar si todavía no existe ninguno | `plataforma` / `Plataforma123!` | Variables `Auth__PlatformAdmin__Username` y `Auth__PlatformAdmin__Password`; cambia la contraseña tras el primer acceso y después puedes quitar las variables |
 
 Las fechas de las reservas se guardan en la **hora local del restaurante**.
@@ -113,5 +148,4 @@ Hay ejemplos listos para ejecutar en `SistemaRestaurante.API/SistemaRestaurante.
 
 ## Pendiente (siguientes fases)
 
-- Pruebas automáticas del backend e integración continua.
 - Despliegue (Docker y hosting).
