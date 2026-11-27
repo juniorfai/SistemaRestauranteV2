@@ -28,6 +28,16 @@
   font-size: 1.05rem;
 }
 .brand i { font-size: 1.5rem; }
+.brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.brand-sub {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--app-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-sub:empty { display: none; }
 
 .nav-links {
   display: flex;
@@ -105,7 +115,7 @@
 /* Tablet vertical: menú compacto solo con iconos */
 @media (max-width: 991.98px) {
   .sidebar { width: 76px; align-items: center; }
-  .brand-name, .nav-link-item span, .theme-toggle span, .user-text { display: none; }
+  .brand-text, .nav-link-item span, .theme-toggle span, .user-text { display: none; }
   .nav-link-item, .theme-toggle, .user-box { justify-content: center; width: 52px; padding: 0; }
   .content { padding: 1.5rem 1.25rem 2.5rem; }
 }

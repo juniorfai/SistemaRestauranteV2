@@ -13,8 +13,8 @@ namespace SistemaRestaurante.DataAccess.Seeders
     {
         public static async Task SeedAsync(RestaurantDbContext context)
         {
-            // Verificar si ya hay datos
-            if (await context.Customers.AnyAsync())
+            // Verificar si ya hay datos (sin usuario conectado, hay que saltarse el filtro por restaurante)
+            if (await context.Customers.IgnoreQueryFilters().AnyAsync())
                 return;
 
             // 1. Crear Restaurante
@@ -69,10 +69,10 @@ namespace SistemaRestaurante.DataAccess.Seeders
             // 4. Crear Clientes
             var customers = new List<Customer>
             {
-                new Customer { FirstName = "Juan", LastName = "Pérez", Email = "juan@email.com", PhoneNumber = "555-0101", Preferences = "Mesa cerca de ventana", CreatedAt = DateTime.UtcNow, IsActive = true },
-                new Customer { FirstName = "María", LastName = "García", Email = "maria@email.com", PhoneNumber = "555-0102", Preferences = "Sin cerdo", CreatedAt = DateTime.UtcNow, IsActive = true },
-                new Customer { FirstName = "Carlos", LastName = "López", Email = "carlos@email.com", PhoneNumber = "555-0103", Preferences = "Alergia al maní", CreatedAt = DateTime.UtcNow, IsActive = true },
-                new Customer { FirstName = "Ana", LastName = "Martínez", Email = "ana@email.com", PhoneNumber = "555-0104", Preferences = "", CreatedAt = DateTime.UtcNow, IsActive = true }
+                new Customer { FirstName = "Juan", RestaurantId = restaurant.Id, LastName = "Pérez", Email = "juan@email.com", PhoneNumber = "555-0101", Preferences = "Mesa cerca de ventana", CreatedAt = DateTime.UtcNow, IsActive = true },
+                new Customer { FirstName = "María", RestaurantId = restaurant.Id, LastName = "García", Email = "maria@email.com", PhoneNumber = "555-0102", Preferences = "Sin cerdo", CreatedAt = DateTime.UtcNow, IsActive = true },
+                new Customer { FirstName = "Carlos", RestaurantId = restaurant.Id, LastName = "López", Email = "carlos@email.com", PhoneNumber = "555-0103", Preferences = "Alergia al maní", CreatedAt = DateTime.UtcNow, IsActive = true },
+                new Customer { FirstName = "Ana", RestaurantId = restaurant.Id, LastName = "Martínez", Email = "ana@email.com", PhoneNumber = "555-0104", Preferences = "", CreatedAt = DateTime.UtcNow, IsActive = true }
             };
             await context.Customers.AddRangeAsync(customers);
             await context.SaveChangesAsync();
@@ -91,6 +91,7 @@ namespace SistemaRestaurante.DataAccess.Seeders
                     Status = i == 0 ? ReservationStatus.Confirmed : ReservationStatus.Pending,
                     SpecialRequests = i == 1 ? "Aniversario" : null,
                     CustomerId = customers[i].Id,
+                    RestaurantId = restaurant.Id,
                     TableId = table.Id,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true
@@ -101,16 +102,18 @@ namespace SistemaRestaurante.DataAccess.Seeders
         }
     
         /// <summary>
-        /// Usuarios de prueba para desarrollo (uno por rol, además del administrador inicial).
-        /// Solo se ejecuta con Database:SeedDemoData = true. Nunca activar en producción.
+        /// Personal de prueba del primer restaurante, uno por rol. Solo se ejecuta con
+        /// Database:SeedDemoData = true. Nunca activar en producción.
         /// </summary>
         public static async Task SeedDemoUsersAsync(RestaurantDbContext context, IUserService userService)
         {
-            if (await context.Users.AnyAsync(u => u.Role != UserRole.Admin))
+            var restaurant = await context.Restaurants.IgnoreQueryFilters().OrderBy(r => r.Id).FirstOrDefaultAsync();
+            if (restaurant == null || await context.Users.IgnoreQueryFilters().AnyAsync(u => u.RestaurantId == restaurant.Id))
                 return;
 
-            await userService.CreateAsync("encargado", "Laura Encargada", UserRole.Manager, "Encargado123!");
-            await userService.CreateAsync("camarero", "Pablo Camarero", UserRole.Staff, "Camarero123!");
+            await userService.CreateForRestaurantAsync(restaurant.Id, "admin", "Administrador", UserRole.Admin, "Admin123!");
+            await userService.CreateForRestaurantAsync(restaurant.Id, "encargado", "Laura Encargada", UserRole.Manager, "Encargado123!");
+            await userService.CreateForRestaurantAsync(restaurant.Id, "camarero", "Pablo Camarero", UserRole.Staff, "Camarero123!");
         }
     }
 }

@@ -11,11 +11,14 @@ namespace SistemaRestaurante.API.Mappings
         public AutoMapperProfile()
         {
             // User (nunca se expone el hash ni el SecurityStamp)
-            CreateMap<User, UserResponseDTO>();
+            CreateMap<User, UserResponseDTO>()
+                .ForMember(dest => dest.RestaurantName,
+                    opt => opt.MapFrom(src => src.Restaurant != null ? src.Restaurant.Name : null));
 
             // Restaurant
             CreateMap<Restaurant, RestaurantResponseDTO>();
             CreateMap<RestaurantRequestDTO, Restaurant>();
+            CreateMap<RestaurantCreateRequestDTO, Restaurant>();
 
             // Customer
             CreateMap<Customer, CustomerResponseDTO>()

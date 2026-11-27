@@ -16,11 +16,14 @@ export const authGuard: CanActivateFn = (_route, state) => {
 export const roleGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const roles = (route.data['roles'] as UserRole[] | undefined) ?? [];
-  return auth.hasRole(roles) ? true : inject(Router).createUrlTree(['/reservas']);
+  return auth.hasRole(roles) ? true : inject(Router).createUrlTree([auth.homeUrl()]);
 };
 
 /** La pantalla de login no tiene sentido con sesión iniciada. */
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  return auth.token() ? inject(Router).createUrlTree(['/reservas']) : true;
+  return auth.token() ? inject(Router).createUrlTree([auth.homeUrl()]) : true;
 };
+
+/** Ruta vacía y rutas desconocidas: a la pantalla de inicio de cada rol. */
+export const homeRedirect = () => inject(AuthService).homeUrl();

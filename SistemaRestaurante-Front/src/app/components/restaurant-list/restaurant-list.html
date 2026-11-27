@@ -1,0 +1,136 @@
+<div class="page-header">
+  <div>
+    <h2>Restaurantes</h2>
+    <p>
+      Clientes del programa.
+      @if (restaurants().length) { {{ activeCount() }} activos de {{ restaurants().length }}. }
+    </p>
+  </div>
+  <button type="button" class="btn btn-primary px-4" (click)="openNew()">
+    <i class="bi bi-plus-lg me-2"></i>Nuevo restaurante
+  </button>
+</div>
+
+@if (notice()) {
+  <div class="alert alert-success-soft d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-check-circle me-2"></i>{{ notice() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="notice.set(null)"></button>
+  </div>
+}
+
+@if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+  </div>
+}
+
+@if (panel(); as p) {
+  @if (p.mode !== 'closed') {
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4>{{ p.mode === 'new' ? 'Nuevo restaurante' : 'Editar ' + p.restaurant.name }}</h4>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <app-restaurant-fields [group]="form" />
+
+          @if (p.mode === 'new') {
+            <h5 class="mt-4 mb-1">Primer administrador</h5>
+            <p class="text-muted small mb-3">Entrará con este usuario y dará de alta al resto del personal.</p>
+            <div class="row g-3" [formGroup]="adminForm">
+              <div class="col-md-4">
+                <label for="a-name" class="form-label">Nombre completo</label>
+                <input id="a-name" class="form-control" formControlName="adminFullName" autocomplete="off"
+                       [class.is-invalid]="adminForm.controls.adminFullName.touched && adminForm.controls.adminFullName.invalid">
+                <div class="invalid-feedback">Escribe el nombre (máximo 100 caracteres).</div>
+              </div>
+              <div class="col-md-4">
+                <label for="a-user" class="form-label">Usuario</label>
+                <input id="a-user" class="form-control" formControlName="adminUsername" autocomplete="off"
+                       autocapitalize="none" spellcheck="false"
+                       [class.is-invalid]="adminForm.controls.adminUsername.touched && adminForm.controls.adminUsername.invalid">
+                <div class="invalid-feedback">De 3 a 50 caracteres: letras, números, punto o guion.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="a-pass" class="form-label">Contraseña inicial</label>
+                <input id="a-pass" type="text" class="form-control" formControlName="adminPassword" autocomplete="new-password"
+                       [class.is-invalid]="adminForm.controls.adminPassword.touched && adminForm.controls.adminPassword.invalid">
+                <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+              </div>
+            </div>
+          }
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" (click)="close()">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+              @if (saving()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              {{ p.mode === 'new' ? 'Crear restaurante' : 'Guardar' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th class="ps-4">Restaurante</th>
+          <th class="d-none d-md-table-cell">Contacto</th>
+          <th class="d-none d-lg-table-cell">Alta</th>
+          <th>Estado</th>
+          <th class="text-end pe-4">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of restaurants(); track r.id) {
+          <tr [class.text-muted]="!r.isActive">
+            <td class="ps-4">
+              <div class="fw-semibold">{{ r.name }}</div>
+              <div class="small text-muted">{{ r.address || 'Sin dirección' }}</div>
+            </td>
+            <td class="d-none d-md-table-cell small">
+              <div>{{ r.email || '—' }}</div>
+              <div class="text-muted">{{ r.phoneNumber }}</div>
+            </td>
+            <td class="d-none d-lg-table-cell text-nowrap">{{ asUtc(r.createdAt) | date: 'dd/MM/yyyy' : undefined : 'es' }}</td>
+            <td>
+              <span class="status-pill" [class.status-confirmed]="r.isActive" [class.status-cancelled]="!r.isActive">
+                {{ r.isActive ? 'Activo' : 'Suspendido' }}
+              </span>
+            </td>
+            <td class="text-end pe-4 text-nowrap">
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" aria-label="Editar"
+                      (click)="openEdit(r)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="btn btn-sm" [class.btn-outline-danger]="r.isActive"
+                      [class.btn-outline-success]="!r.isActive"
+                      [title]="r.isActive ? 'Suspender' : 'Reactivar'"
+                      [attr.aria-label]="r.isActive ? 'Suspender ' + r.name : 'Reactivar ' + r.name"
+                      (click)="toggleActive(r)">
+                <i class="bi" [class.bi-pause-circle]="r.isActive" [class.bi-play-circle]="!r.isActive"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                @if (loading()) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>Cargando restaurantes...
+                } @else {
+                  <i class="bi bi-shop"></i>Todavía no hay restaurantes. Da de alta el primero.
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

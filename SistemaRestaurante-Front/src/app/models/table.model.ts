@@ -16,5 +16,4 @@ export interface TableRequestDTO {
   capacity: number;
   location?: string | null;
   status: TableStatus;
-  restaurantId: number;
 }

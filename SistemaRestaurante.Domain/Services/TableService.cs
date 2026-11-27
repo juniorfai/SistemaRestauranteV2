@@ -4,24 +4,26 @@ using SistemaRestaurante.Domain.Enums;
 using SistemaRestaurante.Domain.Interfaces.Repositories;
 using SistemaRestaurante.Domain.Interfaces.Services;
 
+using SistemaRestaurante.Domain.Interfaces;
+
 namespace SistemaRestaurante.Domain.Services
 {
     public class TableService : ITableService
     {
         private readonly ITableRepository _tableRepository;
-        private readonly IRestaurantRepository _restaurantRepository;
         private readonly IReservationRepository _reservationRepository;
+        private readonly ITenantContext _tenant;
         private readonly ILogger<TableService> _logger;
 
         public TableService(
             ITableRepository tableRepository,
-            IRestaurantRepository restaurantRepository,
             IReservationRepository reservationRepository,
+            ITenantContext tenant,
             ILogger<TableService> logger)
         {
             _tableRepository = tableRepository;
-            _restaurantRepository = restaurantRepository;
             _reservationRepository = reservationRepository;
+            _tenant = tenant;
             _logger = logger;
         }
 
@@ -42,7 +44,7 @@ namespace SistemaRestaurante.Domain.Services
 
         public async Task<Table> CreateAsync(Table table)
         {
-            await EnsureRestaurantExistsAsync(table.RestaurantId);
+            table.RestaurantId = _tenant.RequireRestaurantId();
 
             // El número de mesa es único por restaurante (también entre mesas dadas de baja).
             var sameNumber = await _tableRepository.GetByNumberIncludingInactiveAsync(table.RestaurantId, table.TableNumber);
@@ -74,11 +76,9 @@ namespace SistemaRestaurante.Domain.Services
             var existing = await _tableRepository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"No se encontró la mesa con ID {id}");
 
-            await EnsureRestaurantExistsAsync(table.RestaurantId);
-
-            if (existing.TableNumber != table.TableNumber || existing.RestaurantId != table.RestaurantId)
+            if (existing.TableNumber != table.TableNumber)
             {
-                var sameNumber = await _tableRepository.GetByNumberIncludingInactiveAsync(table.RestaurantId, table.TableNumber);
+                var sameNumber = await _tableRepository.GetByNumberIncludingInactiveAsync(existing.RestaurantId, table.TableNumber);
                 if (sameNumber != null && sameNumber.Id != id)
                     throw new InvalidOperationException($"Ya existe la mesa número {table.TableNumber} en este restaurante");
             }
@@ -87,7 +87,6 @@ namespace SistemaRestaurante.Domain.Services
             existing.Capacity = table.Capacity;
             existing.Location = table.Location;
             existing.Status = table.Status;
-            existing.RestaurantId = table.RestaurantId;
             existing.UpdatedAt = DateTime.UtcNow;
             await _tableRepository.UpdateAsync(existing);
         }
@@ -112,12 +111,6 @@ namespace SistemaRestaurante.Domain.Services
 
             _logger.LogInformation("Deleting table {TableId}", id);
             await _tableRepository.DeleteAsync(id);
-        }
-
-        private async Task EnsureRestaurantExistsAsync(int restaurantId)
-        {
-            if (!await _restaurantRepository.ExistsAsync(restaurantId))
-                throw new KeyNotFoundException($"No se encontró el restaurante con ID {restaurantId}");
         }
     }
 }

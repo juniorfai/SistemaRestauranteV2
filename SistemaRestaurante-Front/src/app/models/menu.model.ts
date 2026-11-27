@@ -17,5 +17,4 @@ export interface MenuItemRequestDTO {
   price: number;
   category: MenuItemCategory;
   isAvailable: boolean;
-  restaurantId: number;
 }

@@ -3,9 +3,7 @@ import { Observable } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MenuItemCategory, MenuItemRequestDTO } from '../../models/menu.model';
-import { RestaurantResponseDTO } from '../../models/restaurant.model';
 import { MenuService } from '../../services/menu.service';
-import { RestaurantService } from '../../services/restaurant.service';
 import { apiErrorMessage } from '../../utils/api-error';
 import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
 
@@ -18,7 +16,6 @@ import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
 export class MenuFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly menuService = inject(MenuService);
-  private readonly restaurantService = inject(RestaurantService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -27,7 +24,6 @@ export class MenuFormComponent implements OnInit {
 
   readonly itemId = signal<number | null>(null);
   readonly isEditMode = computed(() => this.itemId() !== null);
-  readonly restaurants = signal<RestaurantResponseDTO[]>([]);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -37,19 +33,9 @@ export class MenuFormComponent implements OnInit {
     price: [0, [Validators.required, Validators.min(0.01)]],
     category: ['MainCourse' as MenuItemCategory, Validators.required],
     isAvailable: [true],
-    restaurantId: [0, [Validators.required, Validators.min(1)]],
   });
 
   ngOnInit(): void {
-    this.restaurantService.getRestaurants().subscribe({
-      next: (data) => {
-        this.restaurants.set(data);
-        if (!this.isEditMode() && data.length > 0 && this.form.controls.restaurantId.value === 0) {
-          this.form.controls.restaurantId.setValue(data[0].id);
-        }
-      },
-    });
-
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       const id = Number(idParam);
@@ -62,7 +48,6 @@ export class MenuFormComponent implements OnInit {
             price: item.price,
             category: item.category,
             isAvailable: item.isAvailable,
-            restaurantId: item.restaurantId,
           }),
         error: (err) => this.error.set(apiErrorMessage(err, 'No se pudo cargar el plato.')),
       });

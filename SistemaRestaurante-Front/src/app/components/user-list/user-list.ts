@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { UserResponseDTO, UserRole } from '../../models/auth.model';
+import { RestaurantRole, UserResponseDTO } from '../../models/auth.model';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { apiErrorMessage } from '../../utils/api-error';
@@ -14,7 +14,11 @@ type Panel =
   | { mode: 'edit'; user: UserResponseDTO }
   | { mode: 'password'; user: UserResponseDTO };
 
-/** Gestión del personal: altas, cambio de rol, bajas y nueva contraseña. Solo administradores. */
+/**
+ * Gestión del personal: altas, cambio de rol, bajas y nueva contraseña (administrador del
+ * restaurante). El administrador de la plataforma ve a todo el personal de todos los
+ * restaurantes y solo puede ponerles una contraseña nueva (soporte).
+ */
 @Component({
   selector: 'app-user-list',
   standalone: true,
@@ -37,10 +41,13 @@ export class UserListComponent implements OnInit {
   readonly notice = signal<string | null>(null);
   readonly panel = signal<Panel>({ mode: 'closed' });
 
+  /** Vista de soporte de la plataforma: solo lectura y cambio de contraseña. */
+  readonly platformMode = this.auth.isPlatformAdmin;
+
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._-]{3,50}$/)]],
     fullName: ['', [Validators.required, Validators.maxLength(100)]],
-    role: ['Staff' as UserRole, Validators.required],
+    role: ['Staff' as RestaurantRole, Validators.required],
     isActive: [true],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
   });
@@ -53,7 +60,13 @@ export class UserListComponent implements OnInit {
     this.loading.set(true);
     this.userService.getUsers().subscribe({
       next: (data) => {
-        this.users.set(data);
+        // El propio administrador de la plataforma no es personal de ningún restaurante.
+        const staff = data.filter((u) => u.role !== 'PlatformAdmin');
+        this.users.set(
+          this.platformMode()
+            ? [...staff].sort((a, b) => (a.restaurantName ?? '').localeCompare(b.restaurantName ?? '', 'es'))
+            : staff,
+        );
         this.loading.set(false);
       },
       error: (err) => {
@@ -79,13 +92,13 @@ export class UserListComponent implements OnInit {
   }
 
   openEdit(user: UserResponseDTO): void {
-    this.form.reset({ username: user.username, fullName: user.fullName, role: user.role, isActive: user.isActive, password: '' });
+    this.form.reset({ username: user.username, fullName: user.fullName, role: asRestaurantRole(user), isActive: user.isActive, password: '' });
     this.setEnabled({ username: false, password: false, roleAndStatus: !this.isSelf(user) });
     this.open({ mode: 'edit', user });
   }
 
   openPassword(user: UserResponseDTO): void {
-    this.form.reset({ username: user.username, fullName: user.fullName, role: user.role, isActive: user.isActive, password: '' });
+    this.form.reset({ username: user.username, fullName: user.fullName, role: asRestaurantRole(user), isActive: user.isActive, password: '' });
     this.setEnabled({ username: false, password: true, roleAndStatus: true });
     this.open({ mode: 'password', user });
   }
@@ -161,4 +174,8 @@ export class UserListComponent implements OnInit {
     toggle(fields.password, c.password);
     toggle(fields.roleAndStatus, c.role, c.isActive);
   }
+}
+
+function asRestaurantRole(user: UserResponseDTO): RestaurantRole {
+  return user.role === 'PlatformAdmin' ? 'Staff' : user.role;
 }

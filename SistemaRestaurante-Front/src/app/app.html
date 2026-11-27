@@ -1,9 +1,12 @@
 @if (auth.isLoggedIn()) {
 <div class="app-shell">
   <aside class="sidebar" aria-label="Menú principal">
-    <a class="brand" routerLink="/reservas">
+    <a class="brand" [routerLink]="auth.homeUrl()">
       <i class="bi bi-egg-fried" aria-hidden="true"></i>
-      <span class="brand-name">Restaurante Master</span>
+      <span class="brand-text">
+        <span class="brand-name">Restaurante Master</span>
+        <span class="brand-sub">{{ auth.user()?.restaurantName ?? (auth.isPlatformAdmin() ? 'Plataforma' : '') }}</span>
+      </span>
     </a>
 
     <nav class="nav-links">

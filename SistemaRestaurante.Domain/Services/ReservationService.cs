@@ -83,6 +83,7 @@ namespace SistemaRestaurante.Domain.Services
             }
 
             reservation.Id = 0;
+            reservation.RestaurantId = table.RestaurantId;
             reservation.TotalAmount = total;
             reservation.Status = ReservationStatus.Pending;
             reservation.ReservationMenuItems = reservationMenuItems;

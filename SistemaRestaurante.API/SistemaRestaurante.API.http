@@ -44,3 +44,50 @@ Content-Type: application/json
 ### Confirmar reserva
 PATCH {{baseUrl}}/Reservation/1/confirm
 Authorization: Bearer {{token}}
+
+### Datos de mi restaurante
+GET {{baseUrl}}/Restaurant/current
+Authorization: Bearer {{token}}
+
+### ---------- Administración de la plataforma ----------
+
+### Iniciar sesión como plataforma
+# @name platformLogin
+POST {{baseUrl}}/Auth/login
+Content-Type: application/json
+
+{
+  "username": "plataforma",
+  "password": "Plataforma123!"
+}
+
+@platformToken = {{platformLogin.response.body.$.token}}
+
+### Todos los restaurantes
+GET {{baseUrl}}/Restaurant
+Authorization: Bearer {{platformToken}}
+
+### Alta de restaurante con su primer administrador
+POST {{baseUrl}}/Restaurant
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "name": "Casa Ejemplo",
+  "address": "Calle Mayor 1",
+  "phoneNumber": "600123456",
+  "email": "hola@casaejemplo.test",
+  "openingHours": "L-D 13:00-23:30",
+  "adminUsername": "casaejemplo",
+  "adminFullName": "Responsable Casa Ejemplo",
+  "adminPassword": "CambiaEsto123!"
+}
+
+### Suspender un restaurante (isActive: true para reactivarlo)
+PATCH {{baseUrl}}/Restaurant/2/active
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}

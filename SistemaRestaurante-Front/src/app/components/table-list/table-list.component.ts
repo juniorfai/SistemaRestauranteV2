@@ -2,9 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RestaurantResponseDTO } from '../../models/restaurant.model';
 import { TableRequestDTO, TableResponseDTO, TableStatus } from '../../models/table.model';
-import { RestaurantService } from '../../services/restaurant.service';
 import { TableService } from '../../services/table.service';
 import { apiErrorMessage } from '../../utils/api-error';
 import { TABLE_STATUS_BADGES, TABLE_STATUS_LABELS, TABLE_STATUSES } from '../../utils/labels';
@@ -19,14 +17,12 @@ export class TableListComponent implements OnInit {
   readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly tableService = inject(TableService);
-  private readonly restaurantService = inject(RestaurantService);
 
   readonly statuses = TABLE_STATUSES;
   readonly statusLabels = TABLE_STATUS_LABELS;
   readonly statusBadges = TABLE_STATUS_BADGES;
 
   readonly tables = signal<TableResponseDTO[]>([]);
-  readonly restaurants = signal<RestaurantResponseDTO[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -39,14 +35,10 @@ export class TableListComponent implements OnInit {
     capacity: [4, [Validators.required, Validators.min(1), Validators.max(50)]],
     location: ['', Validators.maxLength(100)],
     status: ['Available' as TableStatus, Validators.required],
-    restaurantId: [0, [Validators.required, Validators.min(1)]],
   });
 
   ngOnInit(): void {
     this.load();
-    this.restaurantService.getRestaurants().subscribe({
-      next: (data) => this.restaurants.set(data),
-    });
   }
 
   load(): void {
@@ -70,7 +62,6 @@ export class TableListComponent implements OnInit {
       capacity: 4,
       location: '',
       status: 'Available',
-      restaurantId: this.restaurants()[0]?.id ?? 0,
     });
     this.editingId.set(0);
   }
@@ -81,7 +72,6 @@ export class TableListComponent implements OnInit {
       capacity: table.capacity,
       location: table.location ?? '',
       status: table.status,
-      restaurantId: table.restaurantId,
     });
     this.editingId.set(table.id);
   }

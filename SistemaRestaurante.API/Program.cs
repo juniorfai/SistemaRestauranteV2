@@ -14,6 +14,8 @@ using SistemaRestaurante.DataAccess.Context;
 using SistemaRestaurante.DataAccess.Repositories;
 using SistemaRestaurante.DataAccess.Seeders;
 using SistemaRestaurante.Domain.Entities;
+using SistemaRestaurante.Domain.Enums;
+using SistemaRestaurante.Domain.Interfaces;
 using SistemaRestaurante.Domain.Interfaces.Repositories;
 using SistemaRestaurante.Domain.Interfaces.Services;
 using SistemaRestaurante.Domain.Services;
@@ -56,6 +58,10 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "Falta la cadena de conexión 'DefaultConnection'. Configúrala en appsettings.Development.json " +
         "o en la variable de entorno ConnectionStrings__DefaultConnection.");
+
+// Restaurante de cada petición, sacado del token. La base filtra todo por él.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantContext, HttpTenantContext>();
 
 builder.Services.AddDbContext<RestaurantDbContext>(options => options.UseSqlServer(connectionString));
 
@@ -105,7 +111,8 @@ builder.Services
             ClockSkew = TimeSpan.FromMinutes(1)
         };
 
-        // El token deja de valer si el usuario se desactiva o cambia su contraseña o su rol.
+        // El token deja de valer si el usuario se desactiva, cambia su contraseña o su rol,
+        // o si su restaurante se suspende.
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = async context =>
@@ -117,8 +124,9 @@ builder.Services
                 catch (UnauthorizedAccessException) { context.Fail("Token sin usuario"); return; }
 
                 var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
-                var user = await users.GetByIdAsync(userId);
-                if (user == null || user.SecurityStamp != stamp)
+                var user = await users.GetForAuthAsync(userId);
+                var restaurantOk = user?.Role == UserRole.PlatformAdmin || user?.Restaurant is { IsActive: true };
+                if (user == null || !user.IsActive || user.SecurityStamp != stamp || !restaurantOk)
                     context.Fail("La sesión ya no es válida");
             }
         };
@@ -186,20 +194,27 @@ using (var scope = app.Services.CreateScope())
     if (app.Configuration.GetValue<bool>("Database:SeedDemoData"))
         await DataSeeder.SeedAsync(dbContext);
 
-    // Primer administrador: solo se crea si la base no tiene ningún usuario.
-    var initialAdmin = app.Configuration.GetSection("Auth:InitialAdmin");
+    // Administrador de la plataforma (quien da de alta los restaurantes): solo si aún no existe.
+    var initialAdmin = app.Configuration.GetSection("Auth:PlatformAdmin");
     var adminUser = initialAdmin["Username"];
     var adminPassword = initialAdmin["Password"];
     var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
     var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     if (!string.IsNullOrWhiteSpace(adminUser) && !string.IsNullOrWhiteSpace(adminPassword))
     {
-        if (await userService.EnsureInitialAdminAsync(adminUser, initialAdmin["FullName"] ?? "Administrador", adminPassword))
-            startupLogger.LogWarning("Creado el administrador inicial {Username}. Cambia su contraseña tras el primer acceso.", adminUser);
+        try
+        {
+            if (await userService.EnsurePlatformAdminAsync(adminUser, initialAdmin["FullName"] ?? "Administración", adminPassword))
+                startupLogger.LogWarning("Creado el administrador de la plataforma {Username}. Cambia su contraseña tras el primer acceso.", adminUser);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            startupLogger.LogError("No se pudo crear el administrador de la plataforma: {Message}", ex.Message);
+        }
     }
-    else if (!await dbContext.Users.AnyAsync())
+    else if (!await dbContext.Users.IgnoreQueryFilters().AnyAsync(u => u.Role == UserRole.PlatformAdmin))
     {
-        startupLogger.LogWarning("No hay usuarios. Configura Auth:InitialAdmin:Username y Auth:InitialAdmin:Password para crear el primero.");
+        startupLogger.LogWarning("No hay administrador de la plataforma. Configura Auth:PlatformAdmin:Username y Auth:PlatformAdmin:Password.");
     }
 
     if (app.Configuration.GetValue<bool>("Database:SeedDemoData"))
