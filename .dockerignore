@@ -1,0 +1,13 @@
+# Contexto de la imagen de la API (se construye desde la raíz).
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+.git/
+.github/
+repo/
+SistemaRestaurante-Front/
+SistemaRestaurante.Tests/
+**/appsettings.Development.json
+**/TestResults/
+.env

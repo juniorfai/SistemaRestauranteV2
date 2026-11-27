@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Despliegue con Docker: secretos y copias de seguridad locales
+.env
+backups/
