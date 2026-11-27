@@ -99,7 +99,8 @@ namespace SistemaRestaurante.Tests.Infrastructure
         int Guests, string Status, decimal Subtotal, decimal? TipAmount, string? PaymentMethod, List<OrderItemDto> Items);
     public record BillLineDto(string Name, int Quantity, decimal UnitPrice, decimal LineTotal);
     public record BillDto(int OrderId, int TableNumber, string CurrencyCode, List<BillLineDto> Lines, decimal Subtotal,
-        decimal SuggestedTipPercent, decimal SuggestedTip, decimal TotalWithSuggestedTip, int PendingItems);
+        decimal SuggestedTipPercent, decimal SuggestedTip, decimal TotalWithSuggestedTip, int PendingItems,
+        string RestaurantName = "", string Status = "", decimal? TipAmount = null, string? PaymentMethod = null, DateTime? ClosedAt = null);
     public record TicketItemDto(int Id, string Name, int Quantity, string? Notes, string Course, string Status);
     public record TicketDto(int OrderId, int TableNumber, int StationId, string StationName, List<TicketItemDto> Items);
     public record ReservationDto(int Id, DateTime ReservationDateTime, int NumberOfPeople, string Status, int CustomerId, int TableId, decimal? TotalAmount);

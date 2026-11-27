@@ -322,7 +322,7 @@ namespace SistemaRestaurante.Domain.Services
                 .ToList();
             var subtotal = lines.Sum(i => i.LineTotal);
             var tip = RoundMoney(subtotal * restaurant.SuggestedTipPercent / 100m, restaurant.CurrencyCode);
-            return new Bill(order, lines, subtotal, restaurant.SuggestedTipPercent, tip, subtotal + tip, restaurant.CurrencyCode);
+            return new Bill(order, lines, subtotal, restaurant.SuggestedTipPercent, tip, subtotal + tip, restaurant.CurrencyCode, restaurant);
         }
 
         public async Task<Order> CloseAsync(int orderId, PaymentMethod paymentMethod, decimal tipAmount, int userId)

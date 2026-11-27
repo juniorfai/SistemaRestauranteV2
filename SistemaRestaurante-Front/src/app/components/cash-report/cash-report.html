@@ -1,0 +1,103 @@
+<div class="page-header">
+  <div>
+    <h2>Caja del día</h2>
+    <p>Lo cobrado por forma de pago, las propinas y las cuentas del día. Toca una cuenta para ver o reimprimir su comprobante.</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <button type="button" class="btn btn-outline-secondary" (click)="shiftDay(-1)" aria-label="Día anterior">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <input type="date" class="form-control" [max]="today" [ngModel]="date()" (ngModelChange)="changeDate($event)" aria-label="Día">
+    <button type="button" class="btn btn-outline-secondary" (click)="shiftDay(1)" [disabled]="date() >= today" aria-label="Día siguiente">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div></div>
+} @else {
+  @let s = summary();
+  <div class="stat-grid mb-4">
+    <div class="stat">
+      <span class="stat-label">Ventas</span>
+      <span class="stat-value">{{ s.sales | money }}</span>
+      <span class="stat-sub">{{ s.closed }} cuenta{{ s.closed === 1 ? '' : 's' }} · {{ s.guests }} comensales</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Propinas</span>
+      <span class="stat-value">{{ s.tips | money }}</span>
+      <span class="stat-sub">Voluntarias, aparte de las ventas</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Total cobrado</span>
+      <span class="stat-value">{{ s.sales + s.tips | money }}</span>
+      <span class="stat-sub">Ventas + propinas</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Anuladas</span>
+      <span class="stat-value">{{ s.cancelled }}</span>
+      <span class="stat-sub">Cuentas sin cobrar</span>
+    </div>
+  </div>
+
+  @if (s.byMethod.length > 0) {
+    <div class="card mb-4">
+      <div class="card-header"><h4>Por forma de pago</h4></div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Forma de pago</th><th class="text-end">Cuentas</th><th class="text-end">Ventas</th><th class="text-end">Propinas</th><th class="text-end">Total</th></tr>
+          </thead>
+          <tbody>
+            @for (m of s.byMethod; track m.method) {
+              <tr>
+                <td><i class="bi {{ methodIcons[m.method] }} me-2" aria-hidden="true"></i>{{ methodLabels[m.method] }}</td>
+                <td class="text-end">{{ m.orders }}</td>
+                <td class="text-end">{{ m.sales | money }}</td>
+                <td class="text-end">{{ m.tips | money }}</td>
+                <td class="text-end fw-semibold">{{ m.sales + m.tips | money }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <div class="card">
+    <div class="card-header"><h4>Cuentas</h4></div>
+    @if (rows().length === 0) {
+      <div class="card-body text-center text-muted py-5">No hay cuentas cerradas ni anuladas este día.</div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Hora</th><th>Mesa</th><th>Mesero</th><th>Pago</th><th class="text-end">Ventas</th><th class="text-end">Propina</th><th class="text-end">Total</th></tr>
+          </thead>
+          <tbody>
+            @for (o of rows(); track o.id) {
+              <tr class="clickable" (click)="open(o)" [class.is-cancelled]="o.status === 'Cancelled'">
+                <td>{{ time(o.closedAt) }}</td>
+                <td>Mesa {{ o.tableNumber }} <span class="text-muted small">· {{ o.guests }} pax</span></td>
+                <td>{{ o.waiterName }}</td>
+                @if (o.status === 'Closed') {
+                  <td>{{ o.paymentMethod ? methodLabels[o.paymentMethod] : '—' }}</td>
+                  <td class="text-end">{{ o.subtotal | money }}</td>
+                  <td class="text-end">{{ o.tipAmount ?? 0 | money }}</td>
+                  <td class="text-end fw-semibold">{{ o.subtotal + (o.tipAmount ?? 0) | money }}</td>
+                } @else {
+                  <td colspan="4"><span class="status-pill status-danger">Anulada</span> <span class="small text-muted">{{ o.cancelReason }}</span></td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

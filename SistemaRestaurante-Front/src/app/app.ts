@@ -41,6 +41,7 @@ export class App {
     { path: '/restaurantes', label: 'Restaurantes', icon: 'bi-shop', roles: ['PlatformAdmin'] },
     { path: '/sala', label: 'Sala', icon: 'bi-cup-hot', roles: RESTAURANT_ROLES },
     { path: '/cocina', label: 'Cocina', icon: 'bi-fire', roles: ['Admin', 'Manager', 'Kitchen'] },
+    { path: '/caja', label: 'Caja', icon: 'bi-cash-coin', roles: MANAGEMENT_ROLES },
     { path: '/reservas', label: 'Reservas', icon: 'bi-calendar-check', roles: RESTAURANT_ROLES },
     { path: '/mesas', label: 'Mesas', icon: 'bi-grid-3x3-gap', roles: RESTAURANT_ROLES },
     { path: '/clientes', label: 'Clientes', icon: 'bi-people', roles: RESTAURANT_ROLES },

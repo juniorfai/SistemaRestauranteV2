@@ -58,7 +58,13 @@ namespace SistemaRestaurante.API.DTOs.Response
     /// <summary>Cuenta provisional para enseñar al cliente. No es una factura.</summary>
     public class BillResponseDTO
     {
+        /// <summary>Cabecera para imprimir la cuenta.</summary>
+        public string RestaurantName { get; set; } = string.Empty;
+        public string RestaurantAddress { get; set; } = string.Empty;
+        public string RestaurantPhone { get; set; } = string.Empty;
+
         public int OrderId { get; set; }
+        public OrderStatus Status { get; set; }
         public int TableNumber { get; set; }
         public int Guests { get; set; }
         public string WaiterName { get; set; } = string.Empty;
@@ -71,6 +77,11 @@ namespace SistemaRestaurante.API.DTOs.Response
         public decimal TotalWithSuggestedTip { get; set; }
         /// <summary>Platos pedidos que aún no se han servido (no impiden ver la cuenta, sí cerrarla).</summary>
         public int PendingItems { get; set; }
+
+        // Solo en cuentas cerradas: lo que se cobró de verdad (para reimprimir).
+        public decimal? TipAmount { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
+        public DateTime? ClosedAt { get; set; }
     }
 
     public class BillLineDTO

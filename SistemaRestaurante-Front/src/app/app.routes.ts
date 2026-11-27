@@ -35,6 +35,7 @@ export const routes: Routes = [
 
       { path: 'sala', component: FloorComponent, title: 'Sala', canActivate: [roleGuard], data: staff },
       { path: 'sala/cuenta/:id', component: OrderDetailComponent, title: 'Cuenta', canActivate: [roleGuard], data: staff },
+      { path: 'sala/cuenta/:id/cobrar', loadComponent: () => import('./components/bill/bill').then((m) => m.BillComponent), title: 'Cobrar', canActivate: [roleGuard], data: staff },
 
       { path: 'cocina', loadComponent: () => import('./components/kitchen/kitchen').then((m) => m.KitchenComponent), title: 'Cocina', canActivate: [roleGuard], data: { roles: KITCHEN_SCREEN_ROLES } },
 
@@ -51,6 +52,8 @@ export const routes: Routes = [
       { path: 'menu', component: MenuListComponent, title: 'Carta', canActivate: [roleGuard], data: staff },
       { path: 'menu/nuevo', component: MenuFormComponent, title: 'Nuevo plato', canActivate: [roleGuard], data: management },
       { path: 'menu/editar/:id', component: MenuFormComponent, title: 'Editar plato', canActivate: [roleGuard], data: management },
+
+      { path: 'caja', loadComponent: () => import('./components/cash-report/cash-report').then((m) => m.CashReportComponent), title: 'Caja del día', canActivate: [roleGuard], data: management },
 
       { path: 'zonas', component: StationListComponent, title: 'Zonas de preparación', canActivate: [roleGuard], data: management },
 

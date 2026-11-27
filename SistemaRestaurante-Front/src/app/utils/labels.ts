@@ -1,6 +1,6 @@
 import { RestaurantRole, UserRole } from '../models/auth.model';
 import { Allergen, MenuItemCategory } from '../models/menu.model';
-import { OrderCourse, OrderItemStatus, StationType } from '../models/order.model';
+import { OrderCourse, OrderItemStatus, PaymentMethod, StationType } from '../models/order.model';
 import { ReservationStatus } from '../models/reservation.model';
 import { TableStatus } from '../models/table.model';
 
@@ -137,3 +137,19 @@ export const STATION_TYPE_LABELS: Record<StationType, string> = {
 };
 
 export const STATION_TYPES = Object.keys(STATION_TYPE_LABELS) as StationType[];
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  Cash: 'Efectivo',
+  Card: 'Tarjeta',
+  Transfer: 'Transferencia',
+  Other: 'Otro',
+};
+
+export const PAYMENT_METHOD_ICONS: Record<PaymentMethod, string> = {
+  Cash: 'bi-cash-stack',
+  Card: 'bi-credit-card',
+  Transfer: 'bi-phone',
+  Other: 'bi-three-dots',
+};
+
+export const PAYMENT_METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
