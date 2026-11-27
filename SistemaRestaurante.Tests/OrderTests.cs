@@ -163,6 +163,9 @@ namespace SistemaRestaurante.Tests
             Assert.Equal(6200m, bill.SuggestedTip);
             Assert.Equal(68200m, bill.TotalWithSuggestedTip);
             Assert.Equal(2, bill.PendingItems); // listos pero sin servir
+            Assert.Equal(_restaurant.Name, bill.RestaurantName);
+            Assert.Equal("Open", bill.Status);
+            Assert.Null(bill.TipAmount);
 
             await ServeAllAsync(order);
             var closed = await _waiter.PostOkAsync<OrderDto>($"/api/Order/{order.Id}/close",
@@ -172,6 +175,13 @@ namespace SistemaRestaurante.Tests
             Assert.Equal(5000m, closed.TipAmount);
             Assert.Equal("Card", closed.PaymentMethod);
             Assert.Equal("Available", (await _waiter.GetOkAsync<TableDto>($"/api/Table/{table.Id}")).Status);
+
+            // Reimprimir la cuenta cerrada muestra lo que se cobró de verdad.
+            var receipt = await _waiter.GetOkAsync<BillDto>($"/api/Order/{order.Id}/bill");
+            Assert.Equal("Closed", receipt.Status);
+            Assert.Equal(5000m, receipt.TipAmount);
+            Assert.Equal("Card", receipt.PaymentMethod);
+            Assert.NotNull(receipt.ClosedAt);
 
             // Ya no está entre las abiertas ni en cocina, pero sí en el histórico del día.
             Assert.DoesNotContain(await _waiter.GetOkAsync<List<OrderDto>>("/api/Order/open"), o => o.Id == order.Id);

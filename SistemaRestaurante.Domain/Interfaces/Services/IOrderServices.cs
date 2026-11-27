@@ -23,7 +23,7 @@ namespace SistemaRestaurante.Domain.Interfaces.Services
 
     /// <summary>Cuenta provisional que se enseña al cliente (no es una factura).</summary>
     public record Bill(Order Order, IReadOnlyList<OrderItem> Lines, decimal Subtotal, decimal SuggestedTipPercent,
-        decimal SuggestedTip, decimal TotalWithSuggestedTip, string CurrencyCode);
+        decimal SuggestedTip, decimal TotalWithSuggestedTip, string CurrencyCode, Restaurant Restaurant);
 
     public interface IOrderService
     {

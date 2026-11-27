@@ -1,0 +1,197 @@
+@if (bill(); as b) {
+  <div class="page-header no-print">
+    <div>
+      <a [routerLink]="['/sala/cuenta', b.orderId]" class="back-link"><i class="bi bi-arrow-left me-1"></i>Mesa {{ b.tableNumber }}</a>
+      <h2>{{ isOpen() ? 'Cobrar' : 'Comprobante' }} · Mesa {{ b.tableNumber }}</h2>
+      <p>{{ b.waiterName }} · {{ b.guests }} comensal{{ b.guests === 1 ? '' : 'es' }}</p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary" (click)="print()">
+      <i class="bi bi-printer me-1"></i>Imprimir
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center no-print" role="alert">
+      <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+      <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+    </div>
+  }
+
+  <div class="row g-4">
+    <!-- La cuenta en papel: es lo único que sale al imprimir (pensado para tiquetera de 80 mm). -->
+    <div class="col-lg-6 col-xl-5">
+      <div class="bill-paper">
+        <div class="paper-head">
+          <div class="paper-name">{{ b.restaurantName }}</div>
+          @if (b.restaurantAddress) { <div>{{ b.restaurantAddress }}</div> }
+          @if (b.restaurantPhone) { <div>Tel. {{ b.restaurantPhone }}</div> }
+        </div>
+
+        <div class="paper-title">{{ isOpen() ? 'Cuenta provisional' : 'Comprobante de pago' }}</div>
+        <div class="paper-meta">
+          <span>Mesa {{ b.tableNumber }} · {{ b.guests }} pax</span>
+          <span>Atendió: {{ b.waiterName }}</span>
+          <span>{{ dateTime(isOpen() ? printedAt() : b.closedAt) }}</span>
+          <span>Cuenta n.º {{ b.orderId }}</span>
+        </div>
+
+        <table class="paper-lines">
+          <tbody>
+            @for (l of b.lines; track $index) {
+              <tr>
+                <td class="qty">{{ l.quantity }}</td>
+                <td>{{ l.name }}@if (l.quantity > 1) { <span class="unit">{{ money(l.unitPrice) }} c/u</span> }</td>
+                <td class="amount">{{ money(l.lineTotal) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="text-center">Sin consumos</td></tr>
+            }
+          </tbody>
+        </table>
+
+        <div class="paper-row"><span>Subtotal</span><span>{{ money(b.subtotal) }}</span></div>
+        @if (isOpen()) {
+          <div class="paper-row"><span>Propina sugerida ({{ b.suggestedTipPercent }} %)</span><span>{{ money(b.suggestedTip) }}</span></div>
+          <div class="paper-row paper-total"><span>Total con propina</span><span>{{ money(b.totalWithSuggestedTip) }}</span></div>
+          <div class="paper-row paper-alt"><span>Total sin propina</span><span>{{ money(b.subtotal) }}</span></div>
+          <p class="paper-note">
+            La propina es voluntaria: puede aceptarla, modificarla o no darla. Indíquele a su mesero
+            qué desea hacer.
+          </p>
+        } @else if (b.status === 'Closed') {
+          <div class="paper-row"><span>Propina</span><span>{{ money(b.tipAmount ?? 0) }}</span></div>
+          <div class="paper-row paper-total"><span>Total pagado</span><span>{{ money(b.subtotal + (b.tipAmount ?? 0)) }}</span></div>
+          @if (b.paymentMethod) {
+            <div class="paper-row"><span>Forma de pago</span><span>{{ methodLabels[b.paymentMethod] }}</span></div>
+          }
+        }
+        <p class="paper-note">Este documento no es una factura de venta.</p>
+        <p class="paper-thanks">¡Gracias por su visita!</p>
+      </div>
+    </div>
+
+    <div class="col-lg-6 col-xl-7 no-print">
+      @if (isOpen()) {
+        @if (blocking() > 0) {
+          <div class="alert alert-warning">
+            <i class="bi bi-hourglass-split me-2"></i>
+            Quedan <strong>{{ blocking() }}</strong> plato{{ blocking() === 1 ? '' : 's' }} en cocina o retenido{{ blocking() === 1 ? '' : 's' }}.
+            Sírvelos o anúlalos en la <a [routerLink]="['/sala/cuenta', b.orderId]">cuenta de la mesa</a> antes de cobrar.
+            Puedes imprimir la cuenta igualmente.
+          </div>
+        }
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="charge-step">1. Propina</h5>
+            <div class="choice-grid mb-2" role="radiogroup" aria-label="Propina">
+              <button type="button" role="radio" class="choice" [class.active]="tipChoice() === 'suggested'"
+                      [attr.aria-checked]="tipChoice() === 'suggested'" (click)="pickTip('suggested')">
+                <span class="choice-label">Sugerida {{ b.suggestedTipPercent }} %</span>
+                <span class="choice-value">{{ money(b.suggestedTip) }}</span>
+              </button>
+              <button type="button" role="radio" class="choice" [class.active]="tipChoice() === 'none'"
+                      [attr.aria-checked]="tipChoice() === 'none'" (click)="pickTip('none')">
+                <span class="choice-label">Sin propina</span>
+                <span class="choice-value">{{ money(0) }}</span>
+              </button>
+              <button type="button" role="radio" class="choice" [class.active]="tipChoice() === 'custom'"
+                      [attr.aria-checked]="tipChoice() === 'custom'" (click)="pickTip('custom')">
+                <span class="choice-label">Otra cantidad</span>
+                <span class="choice-value">{{ tipChoice() === 'custom' ? money(tip()) : '…' }}</span>
+              </button>
+            </div>
+            @if (tipChoice() === 'custom') {
+              <label for="custom-tip" class="form-label small">Propina que deja el cliente</label>
+              <input id="custom-tip" type="number" inputmode="numeric" min="0" step="100" class="form-control mb-2"
+                     [ngModel]="customTip()" (ngModelChange)="customTip.set($event); confirming.set(false)" placeholder="0">
+            }
+
+            <h5 class="charge-step mt-4">2. Forma de pago</h5>
+            <div class="choice-grid" role="radiogroup" aria-label="Forma de pago">
+              @for (m of methods; track m) {
+                <button type="button" role="radio" class="choice choice-method" [class.active]="method() === m"
+                        [attr.aria-checked]="method() === m" (click)="pickMethod(m)">
+                  <i class="bi {{ methodIcons[m] }}" aria-hidden="true"></i>
+                  <span class="choice-label">{{ methodLabels[m] }}</span>
+                </button>
+              }
+            </div>
+
+            @if (method() === 'Cash') {
+              <div class="cash-box mt-3">
+                <label for="received" class="form-label small">Entrega el cliente</label>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  @for (amount of cashOptions(); track amount) {
+                    <button type="button" class="btn btn-sm btn-outline-secondary" [class.active]="received() === amount"
+                            (click)="received.set(amount)">{{ money(amount) }}</button>
+                  }
+                </div>
+                <input id="received" type="number" inputmode="numeric" min="0" step="1000" class="form-control"
+                       [ngModel]="received()" (ngModelChange)="received.set($event)" placeholder="Otra cantidad">
+                @if (change() !== null) {
+                  <div class="change-due">Vueltas: <strong>{{ money(change()) }}</strong></div>
+                } @else if (received() !== null) {
+                  <div class="small text-danger mt-1">No alcanza para el total.</div>
+                }
+              </div>
+            }
+
+            <div class="charge-total">
+              <div>
+                <div class="small text-muted">Subtotal {{ money(b.subtotal) }} + propina {{ money(tip()) }}</div>
+                <div class="charge-amount">{{ money(total()) }}</div>
+              </div>
+            </div>
+
+            @if (confirming()) {
+              <div class="confirm-box" role="alert">
+                <p class="mb-2">
+                  ¿Cobrar <strong>{{ money(total()) }}</strong> con <strong>{{ methodLabels[method()!] }}</strong>
+                  y cerrar la mesa {{ b.tableNumber }}?
+                </p>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-primary flex-grow-1" (click)="charge()" [disabled]="busy()">
+                    @if (busy()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Sí, cobrar y cerrar
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="confirming.set(false)" [disabled]="busy()">Volver</button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="btn btn-primary btn-lg w-100" (click)="charge()" [disabled]="!canCharge()">
+                <i class="bi bi-check2-circle me-1"></i>
+                @if (!method()) { Elige la forma de pago } @else { Cobrar {{ money(total()) }} }
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="card">
+          <div class="card-body text-center py-5">
+            @if (b.status === 'Closed') {
+              <i class="bi bi-check-circle-fill done-icon" aria-hidden="true"></i>
+              <h4 class="mt-3">Mesa {{ b.tableNumber }} cobrada</h4>
+              <p class="text-muted">
+                {{ money(b.subtotal + (b.tipAmount ?? 0)) }} con {{ b.paymentMethod ? methodLabels[b.paymentMethod] : '—' }}
+                · propina {{ money(b.tipAmount ?? 0) }}. La mesa ya está libre.
+              </p>
+            } @else {
+              <i class="bi bi-x-octagon done-icon text-danger" aria-hidden="true"></i>
+              <h4 class="mt-3">Cuenta anulada</h4>
+            }
+            <div class="d-flex justify-content-center gap-2 mt-3">
+              <button type="button" class="btn btn-outline-secondary" (click)="print()"><i class="bi bi-printer me-1"></i>Imprimir comprobante</button>
+              <button type="button" class="btn btn-primary" (click)="backToFloor()"><i class="bi bi-grid-3x3-gap me-1"></i>Volver a sala</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+} @else if (loading()) {
+  <div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div></div>
+} @else {
+  <div class="alert alert-danger">{{ error() ?? 'No se encontró la cuenta.' }}</div>
+  <a routerLink="/sala" class="btn btn-outline-secondary">Volver a sala</a>
+}

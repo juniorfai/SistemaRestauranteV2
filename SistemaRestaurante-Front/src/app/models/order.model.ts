@@ -109,3 +109,40 @@ export interface KitchenTicketDTO {
   firstSentAt: string;
   items: KitchenTicketItemDTO[];
 }
+
+// ---------- Cuenta y cobro ----------
+
+export interface BillLineDTO {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+/** Cuenta provisional (no es factura). En una cuenta cerrada trae también lo cobrado. */
+export interface BillResponseDTO {
+  restaurantName: string;
+  restaurantAddress: string;
+  restaurantPhone: string;
+  orderId: number;
+  status: OrderStatus;
+  tableNumber: number;
+  guests: number;
+  waiterName: string;
+  openedAt: string;
+  currencyCode: string;
+  lines: BillLineDTO[];
+  subtotal: number;
+  suggestedTipPercent: number;
+  suggestedTip: number;
+  totalWithSuggestedTip: number;
+  pendingItems: number;
+  tipAmount?: number | null;
+  paymentMethod?: PaymentMethod | null;
+  closedAt?: string | null;
+}
+
+export interface CloseOrderRequestDTO {
+  paymentMethod: PaymentMethod;
+  tipAmount: number;
+}

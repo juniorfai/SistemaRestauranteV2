@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AddOrderItemDTO,
+  BillResponseDTO,
+  CloseOrderRequestDTO,
   OpenOrderRequestDTO,
   OrderCourse,
   OrderItemResponseDTO,
@@ -66,6 +68,21 @@ export class OrderService {
 
   setGuests(orderId: number, guests: number): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${orderId}/guests`, { guests });
+  }
+
+  /** Cuenta provisional (o, si ya se cerró, lo cobrado para reimprimir). */
+  getBill(orderId: number): Observable<BillResponseDTO> {
+    return this.http.get<BillResponseDTO>(`${this.apiUrl}/${orderId}/bill`);
+  }
+
+  /** Cobrada: cierra la cuenta y libera la mesa. */
+  close(orderId: number, dto: CloseOrderRequestDTO): Observable<OrderResponseDTO> {
+    return this.http.post<OrderResponseDTO>(`${this.apiUrl}/${orderId}/close`, dto);
+  }
+
+  /** Cuentas cerradas o anuladas en un día (yyyy-MM-dd, hora del restaurante). Solo encargado. */
+  getHistory(date: string): Observable<OrderResponseDTO[]> {
+    return this.http.get<OrderResponseDTO[]>(`${this.apiUrl}/history`, { params: { date } });
   }
 
   cancel(orderId: number, reason: string): Observable<void> {

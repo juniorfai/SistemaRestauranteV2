@@ -6,6 +6,7 @@ import {
   OrderItemResponseDTO,
   OrderItemStatus,
   OrderResponseDTO,
+  PaymentMethod,
 } from '../models/order.model';
 import { COURSES, DEFAULT_COURSE } from './labels';
 
@@ -175,4 +176,100 @@ export function splitTickets(tickets: KitchenTicketDTO[]): { active: KitchenTick
 /** Platos que acaban de llegar a cocina (para el aviso sonoro). */
 export function newPendingItemIds(tickets: KitchenTicketDTO[], seen: ReadonlySet<number>): number[] {
   return tickets.flatMap((t) => t.items).filter((i) => i.status === 'Sent' && !seen.has(i.id)).map((i) => i.id);
+}
+
+// ---------- Cobro ----------
+
+export type TipChoice = 'suggested' | 'none' | 'custom';
+
+/** Propina a cobrar según lo que elija el cliente (la otra cantidad, redondeada y nunca negativa). */
+export function tipFor(choice: TipChoice, suggestedTip: number, custom: number | null): number {
+  if (choice === 'suggested') return suggestedTip;
+  if (choice === 'none') return 0;
+  const value = Number(custom);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+}
+
+/** Vueltas en efectivo; null si aún no se sabe cuánto entregó o no alcanza. */
+export function changeDue(total: number, received: number | null): number | null {
+  if (received === null) return null;
+  const value = Number(received);
+  if (!Number.isFinite(value) || value < total) return null;
+  return value - total;
+}
+
+/** Billetes con los que suele pagarse una cuenta, para tocar en vez de teclear. */
+export function quickCashAmounts(total: number): number[] {
+  const options = new Set<number>([total]);
+  for (const step of [10_000, 20_000, 50_000, 100_000]) options.add(Math.ceil(total / step) * step);
+  return [...options].filter((n) => n >= total).sort((a, b) => a - b).slice(0, 4);
+}
+
+/** Platos que aún bloquean el cierre: retenidos o en cocina (lo listo se da por servido). */
+export function blockingItems(order: OrderResponseDTO): number {
+  return order.items
+    .filter((i) => i.status === 'Held' || i.status === 'Sent' || i.status === 'Preparing')
+    .reduce((n, i) => n + i.quantity, 0);
+}
+
+export interface PaymentTotals {
+  method: PaymentMethod;
+  orders: number;
+  sales: number;
+  tips: number;
+}
+
+export interface DaySummary {
+  closed: number;
+  cancelled: number;
+  guests: number;
+  sales: number;
+  tips: number;
+  byMethod: PaymentTotals[];
+}
+
+/** Caja del día: ventas (sin propina), propinas y desglose por forma de pago. */
+export function summarizeDay(orders: OrderResponseDTO[]): DaySummary {
+  const closed = orders.filter((o) => o.status === 'Closed');
+  const byMethod = new Map<PaymentMethod, PaymentTotals>();
+  for (const o of closed) {
+    const method = o.paymentMethod ?? 'Other';
+    const row = byMethod.get(method) ?? { method, orders: 0, sales: 0, tips: 0 };
+    row.orders++;
+    row.sales += o.subtotal;
+    row.tips += o.tipAmount ?? 0;
+    byMethod.set(method, row);
+  }
+  return {
+    closed: closed.length,
+    cancelled: orders.filter((o) => o.status === 'Cancelled').length,
+    guests: closed.reduce((n, o) => n + o.guests, 0),
+    sales: closed.reduce((n, o) => n + o.subtotal, 0),
+    tips: closed.reduce((n, o) => n + (o.tipAmount ?? 0), 0),
+    byMethod: [...byMethod.values()].sort((a, b) => b.sales + b.tips - (a.sales + a.tips)),
+  };
+}
+
+function parseUtc(isoUtc: string): Date {
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(isoUtc);
+  return new Date(hasZone ? isoUtc : `${isoUtc}Z`);
+}
+
+/** Hora local (HH:mm) de una fecha UTC de la API. */
+export function localTime(isoUtc: string | null | undefined): string {
+  if (!isoUtc) return '';
+  return parseUtc(isoUtc).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+/** Fecha y hora local para imprimir. */
+export function localDateTime(isoUtc: string | null | undefined): string {
+  if (!isoUtc) return '';
+  return parseUtc(isoUtc).toLocaleString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }

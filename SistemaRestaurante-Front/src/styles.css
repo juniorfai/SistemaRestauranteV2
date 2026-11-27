@@ -245,3 +245,12 @@ h1, h2, h3, h4, h5 { font-weight: 600; color: var(--app-text); }
 
 /* Casillas de alérgenos en el formulario de la carta. */
 .allergen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.25rem 1rem; }
+
+/* ---------- Impresión (cuenta de la mesa) ---------- */
+@page { margin: 4mm; }
+@media print {
+  body { background: #fff !important; }
+  .sidebar, .ready-toasts, .no-print { display: none !important; }
+  .app-shell { display: block !important; }
+  .content { margin: 0 !important; padding: 0 !important; }
+}

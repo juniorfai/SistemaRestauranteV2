@@ -19,6 +19,9 @@
         <button type="button" class="btn btn-outline-secondary" (click)="startMove()" [disabled]="busy()">
           <i class="bi bi-arrow-left-right me-1"></i>Cambiar mesa
         </button>
+        <a class="btn btn-primary" [routerLink]="['/sala/cuenta', o.id, 'cobrar']" [class.disabled]="busy()">
+          <i class="bi bi-receipt me-1"></i>Cuenta y cobro
+        </a>
         @if (auth.canManage()) {
           <button type="button" class="btn btn-state btn-state-cancel" (click)="cancelOrder()" [disabled]="busy()">
             <i class="bi bi-x-octagon me-1"></i>Anular cuenta
@@ -32,6 +35,9 @@
     <div class="alert alert-success-soft">
       <i class="bi bi-info-circle me-2"></i>
       Esta cuenta está {{ o.status === 'Closed' ? 'cerrada' : 'anulada' }}{{ o.cancelReason ? ' (' + o.cancelReason + ')' : '' }}.
+      @if (o.status === 'Closed') {
+        <a [routerLink]="['/sala/cuenta', o.id, 'cobrar']" class="ms-1">Ver comprobante</a>
+      }
     </div>
   }
 
@@ -258,6 +264,11 @@
             <span>Total pedido</span>
             <span>{{ o.subtotal | money }}</span>
           </div>
+          @if (isOpen() && o.subtotal > 0) {
+            <a class="btn btn-outline-primary w-100 mt-2" [routerLink]="['/sala/cuenta', o.id, 'cobrar']">
+              <i class="bi bi-receipt me-1"></i>Sacar la cuenta y cobrar
+            </a>
+          }
           @if (summary(); as s) {
             <div class="small text-muted text-end">
               {{ s.served }} servido{{ s.served === 1 ? '' : 's' }} · {{ s.inKitchen + s.held }} en cocina · {{ s.ready }} listo{{ s.ready === 1 ? '' : 's' }}

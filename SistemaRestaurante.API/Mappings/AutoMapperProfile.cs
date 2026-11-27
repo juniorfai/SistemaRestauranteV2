@@ -101,7 +101,11 @@ namespace SistemaRestaurante.API.Mappings
 
         public static BillResponseDTO ToDto(Bill bill) => new()
         {
+            RestaurantName = bill.Restaurant.Name,
+            RestaurantAddress = bill.Restaurant.Address,
+            RestaurantPhone = bill.Restaurant.PhoneNumber,
             OrderId = bill.Order.Id,
+            Status = bill.Order.Status,
             TableNumber = bill.Order.Table?.TableNumber ?? 0,
             Guests = bill.Order.Guests,
             WaiterName = bill.Order.Waiter?.FullName ?? string.Empty,
@@ -123,6 +127,9 @@ namespace SistemaRestaurante.API.Mappings
             SuggestedTip = bill.SuggestedTip,
             TotalWithSuggestedTip = bill.TotalWithSuggestedTip,
             PendingItems = bill.Lines.Count(i => i.Status != OrderItemStatus.Served),
+            TipAmount = bill.Order.Status == OrderStatus.Closed ? bill.Order.TipAmount : null,
+            PaymentMethod = bill.Order.Status == OrderStatus.Closed ? bill.Order.PaymentMethod : null,
+            ClosedAt = bill.Order.ClosedAt,
         };
 
         /// <summary>Agrupa los platos de cocina en comandas: una por cuenta y zona.</summary>
