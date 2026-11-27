@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SistemaRestaurante.Domain.Interfaces;
 
 namespace SistemaRestaurante.API.Middlewares
@@ -37,6 +38,7 @@ namespace SistemaRestaurante.API.Middlewares
                     ForbiddenAccessException => (StatusCodes.Status403Forbidden, "Acceso denegado"),
                     KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado"),
                     InvalidOperationException => (StatusCodes.Status409Conflict, "Operación no permitida"),
+                    DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Operación no permitida"),
                     ArgumentException => (StatusCodes.Status400BadRequest, "Datos no válidos"),
                     _ => (StatusCodes.Status500InternalServerError, "Error interno del servidor")
                 };

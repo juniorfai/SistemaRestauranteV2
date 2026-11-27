@@ -88,6 +88,19 @@ namespace SistemaRestaurante.Tests.Infrastructure
     public record RestaurantDto(int Id, string Name, string Email, bool IsActive);
     public record TableDto(int Id, int TableNumber, int Capacity, string Status, int RestaurantId);
     public record CustomerDto(int Id, string FirstName, string LastName, string Email);
-    public record MenuItemDto(int Id, string Name, decimal Price, bool IsAvailable, int RestaurantId);
+    public record MenuItemDto(int Id, string Name, decimal Price, bool IsAvailable, int RestaurantId,
+        int StationId = 0, string StationName = "", List<string>? Allergens = null);
+
+    // Comandas
+    public record StationDto(int Id, string Name, string Type, int SortOrder, string? PrinterAddress);
+    public record OrderItemDto(int Id, int MenuItemId, string Name, decimal UnitPrice, int Quantity, decimal LineTotal,
+        string? Notes, string Course, string Status, int StationId, string StationName, Guid? ClientRequestId);
+    public record OrderDto(int Id, int TableId, int TableNumber, int WaiterId, string WaiterName, int? ReservationId,
+        int Guests, string Status, decimal Subtotal, decimal? TipAmount, string? PaymentMethod, List<OrderItemDto> Items);
+    public record BillLineDto(string Name, int Quantity, decimal UnitPrice, decimal LineTotal);
+    public record BillDto(int OrderId, int TableNumber, string CurrencyCode, List<BillLineDto> Lines, decimal Subtotal,
+        decimal SuggestedTipPercent, decimal SuggestedTip, decimal TotalWithSuggestedTip, int PendingItems);
+    public record TicketItemDto(int Id, string Name, int Quantity, string? Notes, string Course, string Status);
+    public record TicketDto(int OrderId, int TableNumber, int StationId, string StationName, List<TicketItemDto> Items);
     public record ReservationDto(int Id, DateTime ReservationDateTime, int NumberOfPeople, string Status, int CustomerId, int TableId, decimal? TotalAmount);
 }

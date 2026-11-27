@@ -23,6 +23,14 @@ namespace SistemaRestaurante.API.DTOs.Request
 
         [StringLength(200)]
         public string? OpeningHours { get; set; }
+
+        /// <summary>Moneda (ISO 4217). Por defecto COP.</summary>
+        [RegularExpression("^[A-Za-z]{3}$", ErrorMessage = "La moneda debe ser un código de 3 letras (p. ej. COP)")]
+        public string CurrencyCode { get; set; } = "COP";
+
+        /// <summary>Propina sugerida en la cuenta (%). En Colombia es voluntaria. 0 = no sugerir.</summary>
+        [Range(0, 30, ErrorMessage = "La propina sugerida debe estar entre 0 % y 30 %")]
+        public decimal SuggestedTipPercent { get; set; } = 10m;
     }
 
     /// <summary>Alta de restaurante: sus datos y los de su primer administrador.</summary>

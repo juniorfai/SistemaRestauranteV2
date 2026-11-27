@@ -19,5 +19,11 @@ namespace SistemaRestaurante.API.DTOs.Request
         public MenuItemCategory Category { get; set; }
 
         public bool IsAvailable { get; set; } = true;
+
+        /// <summary>Zona que lo prepara. Si no se indica: Barra para bebidas, Cocina para el resto.</summary>
+        public int? StationId { get; set; }
+
+        /// <summary>Alérgenos que contiene (nombres de <see cref="Allergens"/>, p. ej. "Gluten", "Milk").</summary>
+        public List<Allergens>? Allergens { get; set; }
     }
 }

@@ -11,15 +11,18 @@ namespace SistemaRestaurante.Domain.Services
     public class MenuItemService : IMenuItemService
     {
         private readonly IMenuItemRepository _menuItemRepository;
+        private readonly IStationService _stations;
         private readonly ITenantContext _tenant;
         private readonly ILogger<MenuItemService> _logger;
 
         public MenuItemService(
             IMenuItemRepository menuItemRepository,
+            IStationService stations,
             ITenantContext tenant,
             ILogger<MenuItemService> logger)
         {
             _menuItemRepository = menuItemRepository;
+            _stations = stations;
             _tenant = tenant;
             _logger = logger;
         }
@@ -41,6 +44,8 @@ namespace SistemaRestaurante.Domain.Services
 
             item.Id = 0;
             item.RestaurantId = _tenant.RequireRestaurantId();
+            // Sin zona indicada: Barra para bebidas, Cocina para el resto.
+            item.StationId = await _stations.ResolveForMenuItemAsync(item.StationId == 0 ? null : item.StationId, item.Category);
             item.CreatedAt = DateTime.UtcNow;
             item.IsActive = true;
             _logger.LogInformation("Creating menu item {Name}", item.Name);
@@ -59,6 +64,9 @@ namespace SistemaRestaurante.Domain.Services
             existing.Price = item.Price;
             existing.Category = item.Category;
             existing.IsAvailable = item.IsAvailable;
+            existing.Allergens = item.Allergens;
+            if (item.StationId != 0)
+                existing.StationId = await _stations.ResolveForMenuItemAsync(item.StationId, item.Category);
             existing.UpdatedAt = DateTime.UtcNow;
             await _menuItemRepository.UpdateAsync(existing);
         }

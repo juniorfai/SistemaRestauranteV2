@@ -14,6 +14,9 @@ namespace SistemaRestaurante.API.DTOs.Response
         public MenuItemCategory Category { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public bool IsAvailable { get; set; }
+        public int StationId { get; set; }
+        public string StationName { get; set; } = string.Empty;
+        public List<string> Allergens { get; set; } = new();
         public int RestaurantId { get; set; }
     }
 }
