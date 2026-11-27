@@ -1,0 +1,110 @@
+# Integración continua: en cada push a main y en cada pull request se compila todo y se
+# ejecutan las pruebas del backend (contra un SQL Server real en un contenedor) y del frontend.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (.NET + SQL Server)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          # Contenedor desechable que solo existe durante esta ejecución.
+          MSSQL_SA_PASSWORD: "Ci-Solo-Pruebas-2026!"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci-Solo-Pruebas-2026!' -C -Q 'SELECT 1' -b"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+          --health-start-period 20s
+
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      # Servidor para las pruebas; cada clase de pruebas crea y borra su propia base.
+      TEST_SQLSERVER: "Server=localhost,1433;User Id=sa;Password=Ci-Solo-Pruebas-2026!;TrustServerCertificate=True;MultipleActiveResultSets=true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # SDK 10 para compilar la solución .slnx; runtime 8 para ejecutar la API y las pruebas.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restaurar
+        run: dotnet restore SistemaRestaurante.slnx
+
+      - name: Compilar
+        run: dotnet build SistemaRestaurante.slnx --no-restore --configuration Release
+
+      - name: Comprobar que no faltan migraciones
+        run: |
+          dotnet tool restore
+          dotnet tool run dotnet-ef migrations has-pending-model-changes \
+            --project SistemaRestaurante.DataAccess --startup-project SistemaRestaurante.API \
+            --configuration Release --no-build
+        env:
+          ConnectionStrings__DefaultConnection: ${{ env.TEST_SQLSERVER }};Database=ci_design_time
+          Jwt__Key: clave-solo-para-ci-0123456789-abcdefghijklmnop
+
+      - name: Pruebas
+        run: >-
+          dotnet test SistemaRestaurante.Tests/SistemaRestaurante.Tests.csproj
+          --no-build --configuration Release
+          --logger "trx;LogFileName=backend.trx" --results-directory TestResults
+
+      - name: Guardar resultados de las pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend (Angular)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: SistemaRestaurante-Front
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: SistemaRestaurante-Front/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar
+        run: npx ng build
+
+      - name: Pruebas
+        run: npx ng test --watch=false
