@@ -1,16 +1,16 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { MoneyPipe } from '../../services/money.service';
 import { AuthService } from '../../services/auth.service';
-import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MenuItemCategory, MenuItemResponseDTO } from '../../models/menu.model';
 import { MenuService } from '../../services/menu.service';
 import { apiErrorMessage } from '../../utils/api-error';
-import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
+import { ALLERGEN_LABELS, MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
 
 @Component({
   selector: 'app-menu-list',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink],
+  imports: [MoneyPipe, RouterLink],
   templateUrl: './menu-list.html',
 })
 export class MenuListComponent implements OnInit {
@@ -19,6 +19,10 @@ export class MenuListComponent implements OnInit {
 
   readonly categories = MENU_CATEGORIES;
   readonly categoryLabels = MENU_CATEGORY_LABELS;
+
+  allergenText(item: MenuItemResponseDTO): string {
+    return item.allergens.map((a) => ALLERGEN_LABELS[a]).join(', ');
+  }
 
   readonly items = signal<MenuItemResponseDTO[]>([]);
   readonly selectedCategory = signal<MenuItemCategory | null>(null);

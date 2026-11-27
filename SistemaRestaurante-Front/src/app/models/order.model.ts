@@ -1,0 +1,85 @@
+export type OrderStatus = 'Open' | 'Closed' | 'Cancelled';
+export type OrderItemStatus = 'Draft' | 'Held' | 'Sent' | 'Preparing' | 'Ready' | 'Served' | 'Cancelled';
+export type OrderCourse = 'Immediate' | 'Starter' | 'Main' | 'Dessert';
+export type PaymentMethod = 'Cash' | 'Card' | 'Transfer' | 'Other';
+export type StationType = 'Kitchen' | 'Bar' | 'Other';
+
+export interface StationResponseDTO {
+  id: number;
+  name: string;
+  type: StationType;
+  sortOrder: number;
+  printerAddress?: string | null;
+}
+
+export interface StationRequestDTO {
+  name: string;
+  type: StationType;
+  sortOrder: number;
+  printerAddress?: string | null;
+}
+
+export interface OrderItemResponseDTO {
+  id: number;
+  menuItemId: number;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+  notes?: string | null;
+  course: OrderCourse;
+  status: OrderItemStatus;
+  stationId: number;
+  stationName: string;
+  clientRequestId?: string | null;
+  createdAt: string;
+  sentAt?: string | null;
+  startedAt?: string | null;
+  readyAt?: string | null;
+  servedAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+}
+
+export interface OrderResponseDTO {
+  id: number;
+  tableId: number;
+  tableNumber: number;
+  waiterId: number;
+  waiterName: string;
+  reservationId?: number | null;
+  guests: number;
+  notes?: string | null;
+  status: OrderStatus;
+  /** UTC en ISO. */
+  openedAt: string;
+  closedAt?: string | null;
+  /** Abierta: lo pedido (sin borradores ni anulados). Cerrada: lo cobrado. */
+  subtotal: number;
+  tipAmount?: number | null;
+  paymentMethod?: PaymentMethod | null;
+  cancelReason?: string | null;
+  items: OrderItemResponseDTO[];
+}
+
+export interface OpenOrderRequestDTO {
+  tableId: number;
+  guests: number;
+  reservationId?: number | null;
+  notes?: string | null;
+}
+
+export interface AddOrderItemDTO {
+  menuItemId: number;
+  quantity: number;
+  notes?: string | null;
+  course?: OrderCourse | null;
+  /** Lo genera la tableta: si el envío se repite, el plato no se duplica. */
+  clientRequestId: string;
+}
+
+export interface UpdateOrderItemDTO {
+  quantity: number;
+  notes?: string | null;
+  course: OrderCourse;
+}

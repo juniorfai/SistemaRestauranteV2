@@ -1,0 +1,286 @@
+@if (order(); as o) {
+  <div class="page-header">
+    <div>
+      <a routerLink="/sala" class="back-link"><i class="bi bi-arrow-left me-1"></i>Sala</a>
+      <h2>Mesa {{ o.tableNumber }}</h2>
+      <p>{{ o.waiterName }} · abierta hace {{ elapsed(o.openedAt) }}{{ o.notes ? ' · ' + o.notes : '' }}</p>
+    </div>
+    @if (isOpen()) {
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="stepper" role="group" aria-label="Comensales">
+          <button type="button" class="btn btn-outline-secondary" (click)="changeGuests(-1)" [disabled]="busy()" aria-label="Un comensal menos">
+            <i class="bi bi-dash-lg"></i>
+          </button>
+          <span class="stepper-value" title="Comensales"><i class="bi bi-people-fill me-1 fs-6"></i>{{ o.guests }}</span>
+          <button type="button" class="btn btn-outline-secondary" (click)="changeGuests(1)" [disabled]="busy()" aria-label="Un comensal más">
+            <i class="bi bi-plus-lg"></i>
+          </button>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" (click)="startMove()" [disabled]="busy()">
+          <i class="bi bi-arrow-left-right me-1"></i>Cambiar mesa
+        </button>
+        @if (auth.canManage()) {
+          <button type="button" class="btn btn-state btn-state-cancel" (click)="cancelOrder()" [disabled]="busy()">
+            <i class="bi bi-x-octagon me-1"></i>Anular cuenta
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (!isOpen()) {
+    <div class="alert alert-success-soft">
+      <i class="bi bi-info-circle me-2"></i>
+      Esta cuenta está {{ o.status === 'Closed' ? 'cerrada' : 'anulada' }}{{ o.cancelReason ? ' (' + o.cancelReason + ')' : '' }}.
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+      <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+    </div>
+  }
+  @if (notice()) {
+    <div class="alert alert-success-soft d-flex justify-content-between align-items-center" role="status">
+      <span><i class="bi bi-check-circle me-2"></i>{{ notice() }}</span>
+      <button type="button" class="btn-close" aria-label="Cerrar" (click)="notice.set(null)"></button>
+    </div>
+  }
+
+  @if (moving()) {
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0">Pasar la cuenta a otra mesa</h6>
+          <button type="button" class="btn-close" aria-label="Cancelar" (click)="moving.set(false)"></button>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          @for (t of freeTables(); track t.id) {
+            <button type="button" class="btn btn-outline-secondary" (click)="moveTo(t)">
+              Mesa {{ t.tableNumber }} <span class="text-muted small">({{ t.capacity }})</span>
+            </button>
+          } @empty {
+            <span class="text-muted">No hay mesas libres.</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="row g-4">
+    <!-- ======== Carta ======== -->
+    @if (isOpen()) {
+      <div class="col-lg-6 col-xl-7 order-2 order-lg-1">
+        <div class="d-flex flex-column gap-2 mb-3">
+          <input type="search" class="form-control" placeholder="Buscar plato..." aria-label="Buscar plato"
+                 [ngModel]="search()" (ngModelChange)="search.set($event)">
+          <div class="segmented" role="group" aria-label="Categoría">
+            <button type="button" [class.active]="category() === null" (click)="category.set(null)">Todo</button>
+            @for (c of categories; track c) {
+              <button type="button" [class.active]="category() === c" (click)="category.set(c)">{{ categoryLabels[c] }}</button>
+            }
+          </div>
+        </div>
+
+        <div class="dish-grid">
+          @for (dish of visibleMenu(); track dish.id) {
+            <button type="button" class="dish-btn" (click)="add(dish)" [title]="dish.description ?? dish.name">
+              <span class="dish-name">{{ dish.name }}</span>
+              <span class="dish-price">{{ dish.price | money }}</span>
+              @if (dish.allergens.length) {
+                <span class="dish-allergens"><i class="bi bi-exclamation-diamond me-1"></i>{{ allergenList(dish) }}</span>
+              }
+            </button>
+          } @empty {
+            <div class="empty-state w-100"><i class="bi bi-search"></i>No hay platos disponibles con ese filtro.</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ======== Comanda ======== -->
+    <div [class]="isOpen() ? 'col-lg-6 col-xl-5 order-1 order-lg-2' : 'col-lg-7'">
+      <div class="card ticket">
+        @if (isOpen()) {
+          <div class="card-body pb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="fw-bold mb-0">Por enviar</h5>
+              @if (batch().length) {
+                <button type="button" class="btn btn-sm btn-link text-muted" (click)="clearBatch()">Borrar</button>
+              }
+            </div>
+
+            @for (line of batch(); track line.key) {
+              <div class="ticket-line">
+                <div class="qty-control">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="changeQuantity(line, -1)" [attr.aria-label]="'Quitar uno de ' + line.name">
+                    <i class="bi" [class.bi-dash]="line.quantity > 1" [class.bi-trash]="line.quantity === 1"></i>
+                  </button>
+                  <span class="qty">{{ line.quantity }}</span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="changeQuantity(line, 1)" [attr.aria-label]="'Añadir otro ' + line.name">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+                <div class="line-main">
+                  <button type="button" class="line-name-btn" (click)="editingKey.set(editingKey() === line.key ? null : line.key)">
+                    {{ line.name }}
+                    <span class="line-course">{{ courseLabels[line.course] }}</span>
+                  </button>
+                  @if (line.notes) { <span class="line-notes">{{ line.notes }}</span> }
+                  @if (editingKey() === line.key) {
+                    <div class="line-edit">
+                      <input class="form-control form-control-sm" maxlength="200" placeholder="Nota para cocina: sin cebolla, término medio..."
+                             [ngModel]="line.notes" (ngModelChange)="updateLine(line, { notes: $event })" [attr.aria-label]="'Nota de ' + line.name">
+                      <div class="segmented segmented-sm">
+                        @for (c of courses; track c) {
+                          <button type="button" [class.active]="line.course === c" (click)="updateLine(line, { course: c })">{{ courseLabels[c] }}</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                <span class="line-total">{{ line.unitPrice * line.quantity | money }}</span>
+              </div>
+            }
+
+            @for (item of drafts(); track item.id) {
+              <div class="ticket-line">
+                <div class="qty-control">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="changeDraft(item, -1)" [disabled]="busy()" [attr.aria-label]="'Quitar uno de ' + item.name">
+                    <i class="bi" [class.bi-dash]="item.quantity > 1" [class.bi-trash]="item.quantity === 1"></i>
+                  </button>
+                  <span class="qty">{{ item.quantity }}</span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="changeDraft(item, 1)" [disabled]="busy()" [attr.aria-label]="'Añadir otro ' + item.name">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+                <div class="line-main">
+                  <span class="line-name">{{ item.name }} <span class="line-course">{{ courseLabels[item.course] }}</span></span>
+                  @if (item.notes) { <span class="line-notes">{{ item.notes }}</span> }
+                  <span class="line-meta">Apuntado en la cuenta</span>
+                </div>
+                <span class="line-total">{{ item.lineTotal | money }}</span>
+              </div>
+            }
+
+            @if (pendingCount() === 0) {
+              <p class="text-muted small mb-2">Toca los platos de la carta para apuntarlos. Toca un plato apuntado para añadir una nota o cambiar el tiempo.</p>
+            } @else {
+              @if (canHold()) {
+                <div class="form-check form-switch mt-2">
+                  <input id="hold" class="form-check-input" type="checkbox" [checked]="holdMains()" (change)="holdMains.set(!holdMains())">
+                  <label for="hold" class="form-check-label small">Retener platos fuertes y postres (se marchan después)</label>
+                </div>
+              }
+              <div class="d-flex gap-2 mt-2">
+                @if (batch().length) {
+                  <button type="button" class="btn btn-outline-secondary" (click)="send(false)" [disabled]="busy()" title="Guardar en la cuenta sin enviar a cocina">
+                    Apuntar
+                  </button>
+                }
+                <button type="button" class="btn btn-primary flex-grow-1" (click)="send(true)" [disabled]="busy()">
+                  @if (busy()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                  <i class="bi bi-send me-1"></i>Enviar a cocina ({{ pendingCount() }}) · {{ pendingTotal() | money }}
+                </button>
+              </div>
+            }
+          </div>
+          <hr class="my-0">
+        }
+
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold mb-0">Pedido</h5>
+            @if (isOpen() && readyItems().length > 1) {
+              <button type="button" class="btn btn-sm btn-state btn-state-confirm" (click)="serveAllReady()" [disabled]="busy()">
+                <i class="bi bi-check2-all me-1"></i>Servir todo lo listo
+              </button>
+            }
+          </div>
+
+          @if (isOpen() && held().length) {
+            <div class="fire-bar">
+              <span class="small text-muted">Retenidos:</span>
+              @for (c of held(); track c) {
+                <button type="button" class="btn btn-sm btn-state btn-state-noshow" (click)="fire(c)" [disabled]="busy()">
+                  <i class="bi bi-fire me-1"></i>Marchar {{ courseLabels[c].toLowerCase() }}
+                </button>
+              }
+            </div>
+          }
+
+          @for (group of sentGroups(); track group.course) {
+            <div class="course-title">{{ courseLabels[group.course] }}</div>
+            @for (item of group.items; track item.id) {
+              <div class="ticket-line" [class.is-cancelled]="item.status === 'Cancelled'" [class.is-served]="item.status === 'Served'">
+                <span class="qty qty-static">{{ item.quantity }}</span>
+                <div class="line-main">
+                  <span class="line-name">{{ item.name }}</span>
+                  @if (item.notes) { <span class="line-notes">{{ item.notes }}</span> }
+                  <span class="line-meta">
+                    <span class="{{ statusBadges[item.status] }}">{{ statusLabels[item.status] }}</span>
+                    @if (item.status === 'Sent' || item.status === 'Preparing') { · hace {{ elapsed(item.sentAt) }} }
+                    @if (item.status === 'Cancelled' && item.cancelReason) { · {{ item.cancelReason }} }
+                    @if (item.stationName) { · {{ item.stationName }} }
+                  </span>
+                </div>
+                <div class="line-actions">
+                  <span class="line-total">{{ item.lineTotal | money }}</span>
+                  @if (isOpen()) {
+                    @if (item.status === 'Ready' || item.status === 'Sent' || item.status === 'Preparing') {
+                      <button type="button" class="btn btn-sm btn-state btn-state-confirm" (click)="serve(item)" [disabled]="busy()"
+                              [attr.aria-label]="'Servir ' + item.name" title="Servido">
+                        <i class="bi bi-check2"></i>
+                      </button>
+                    }
+                    @if (item.status === 'Served') {
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="unserve(item)" [disabled]="busy()"
+                              [attr.aria-label]="'Deshacer servido de ' + item.name" title="Deshacer servido">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                      </button>
+                    }
+                    @if (auth.canManage() && item.status !== 'Cancelled') {
+                      <button type="button" class="btn btn-sm btn-state btn-state-cancel" (click)="cancelItem(item)" [disabled]="busy()"
+                              [attr.aria-label]="'Anular ' + item.name" title="Anular">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          } @empty {
+            <p class="text-muted small mb-0">Aún no se ha enviado nada a cocina.</p>
+          }
+
+          <div class="ticket-total">
+            <span>Total pedido</span>
+            <span>{{ o.subtotal | money }}</span>
+          </div>
+          @if (summary(); as s) {
+            <div class="small text-muted text-end">
+              {{ s.served }} servido{{ s.served === 1 ? '' : 's' }} · {{ s.inKitchen + s.held }} en cocina · {{ s.ready }} listo{{ s.ready === 1 ? '' : 's' }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (isOpen() && pendingCount() > 0) {
+    <!-- Atajo en el móvil: la comanda queda arriba y la carta debajo. -->
+    <button type="button" class="btn btn-primary send-fab d-lg-none" (click)="send(true)" [disabled]="busy()">
+      <i class="bi bi-send me-1"></i>Enviar ({{ pendingCount() }})
+    </button>
+  }
+} @else {
+  <div class="empty-state">
+    @if (loading()) {
+      <span class="spinner-border spinner-border-sm me-2"></span>Cargando la cuenta...
+    } @else {
+      <i class="bi bi-exclamation-triangle"></i>{{ error() ?? 'No se encontró la cuenta.' }}
+      <div class="mt-3"><a routerLink="/sala" class="btn btn-outline-secondary">Volver a la sala</a></div>
+    }
+  </div>
+}

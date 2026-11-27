@@ -5,6 +5,10 @@ export interface RestaurantResponseDTO {
   phoneNumber: string;
   email: string;
   openingHours?: string | null;
+  /** ISO 4217, p. ej. "COP". */
+  currencyCode: string;
+  /** Propina sugerida en la cuenta (%). 0 = no sugerir. */
+  suggestedTipPercent: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -15,6 +19,8 @@ export interface RestaurantRequestDTO {
   phoneNumber: string;
   email: string;
   openingHours?: string | null;
+  currencyCode: string;
+  suggestedTipPercent: number;
 }
 
 /** Alta de restaurante junto con su primer administrador. */

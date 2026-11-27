@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RestaurantResponseDTO } from '../../models/restaurant.model';
 import { AuthService } from '../../services/auth.service';
 import { RestaurantService } from '../../services/restaurant.service';
+import { MoneyService } from '../../services/money.service';
 import { apiErrorMessage } from '../../utils/api-error';
 import {
   RestaurantFieldsComponent,
@@ -20,7 +21,7 @@ import {
     <div class="page-header">
       <div>
         <h2>Mi restaurante</h2>
-        <p>Datos de contacto y horario del restaurante.</p>
+        <p>Datos de contacto, horario, moneda y propina sugerida.</p>
       </div>
     </div>
 
@@ -57,6 +58,7 @@ export class RestaurantSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly restaurantService = inject(RestaurantService);
   private readonly auth = inject(AuthService);
+  private readonly money = inject(MoneyService);
 
   readonly form = buildRestaurantForm(this.fb);
   readonly restaurant = signal<RestaurantResponseDTO | null>(null);
@@ -91,6 +93,8 @@ export class RestaurantSettingsComponent implements OnInit {
         this.saving.set(false);
         this.restaurant.set({ ...current, ...request });
         this.auth.setRestaurantName(request.name);
+        this.money.currencyCode.set(request.currencyCode);
+        this.money.suggestedTipPercent.set(request.suggestedTipPercent);
         this.notice.set('Datos del restaurante guardados.');
       },
       error: (err) => {

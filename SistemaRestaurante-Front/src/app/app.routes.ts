@@ -13,6 +13,9 @@ import { MenuListComponent } from './components/menu-list/menu-list';
 import { ReservationFormComponent } from './components/reservation-form/reservation-form.component';
 import { ReservationListComponent } from './components/reservation-list/reservation-list.component';
 import { TableListComponent } from './components/table-list/table-list.component';
+import { FloorComponent } from './components/floor/floor';
+import { OrderDetailComponent } from './components/order-detail/order-detail';
+import { StationListComponent } from './components/station-list/station-list';
 
 const management = { roles: MANAGEMENT_ROLES };
 const staff = { roles: RESTAURANT_ROLES };
@@ -30,6 +33,9 @@ export const routes: Routes = [
       // Administración de la plataforma
       { path: 'restaurantes', component: RestaurantListComponent, title: 'Restaurantes', canActivate: [roleGuard], data: { roles: ['PlatformAdmin'] } },
 
+      { path: 'sala', component: FloorComponent, title: 'Sala', canActivate: [roleGuard], data: staff },
+      { path: 'sala/cuenta/:id', component: OrderDetailComponent, title: 'Cuenta', canActivate: [roleGuard], data: staff },
+
       { path: 'reservas', component: ReservationListComponent, title: 'Reservas', canActivate: [roleGuard], data: staff },
       { path: 'reservas/nueva', component: ReservationFormComponent, title: 'Nueva reserva', canActivate: [roleGuard], data: staff },
       { path: 'reservas/editar/:id', component: ReservationFormComponent, title: 'Editar reserva', canActivate: [roleGuard], data: staff },
@@ -43,6 +49,8 @@ export const routes: Routes = [
       { path: 'menu', component: MenuListComponent, title: 'Carta', canActivate: [roleGuard], data: staff },
       { path: 'menu/nuevo', component: MenuFormComponent, title: 'Nuevo plato', canActivate: [roleGuard], data: management },
       { path: 'menu/editar/:id', component: MenuFormComponent, title: 'Editar plato', canActivate: [roleGuard], data: management },
+
+      { path: 'zonas', component: StationListComponent, title: 'Zonas de preparación', canActivate: [roleGuard], data: management },
 
       { path: 'personal', component: UserListComponent, title: 'Personal', canActivate: [roleGuard], data: { roles: ['Admin', 'PlatformAdmin'] } },
       { path: 'restaurante', component: RestaurantSettingsComponent, title: 'Mi restaurante', canActivate: [roleGuard], data: { roles: ['Admin'] } },

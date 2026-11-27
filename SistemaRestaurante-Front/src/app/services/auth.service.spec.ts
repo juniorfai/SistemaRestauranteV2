@@ -79,9 +79,9 @@ describe('AuthService + authInterceptor', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  it('sends the platform admin to the restaurant list and staff to reservations', () => {
-    login();
-    expect(auth.homeUrl()).toBe('/reservas');
+  it('sends each role to its home screen', () => {
+    login(); // camarero
+    expect(auth.homeUrl()).toBe('/sala');
     expect(auth.isPlatformAdmin()).toBe(false);
 
     auth.login({ username: 'plataforma', password: 'x' }).subscribe();
@@ -91,6 +91,12 @@ describe('AuthService + authInterceptor', () => {
     });
     expect(auth.isPlatformAdmin()).toBe(true);
     expect(auth.homeUrl()).toBe('/restaurantes');
+
+    for (const [role, home] of [['Admin', '/reservas'], ['Manager', '/reservas'], ['Kitchen', '/cuenta']] as const) {
+      auth.login({ username: role, password: 'x' }).subscribe();
+      http.expectOne(`${environment.apiUrl}/Auth/login`).flush({ ...LOGIN, user: { ...LOGIN.user, role } });
+      expect(auth.homeUrl()).toBe(home);
+    }
   });
 
   it('updates the restaurant name in the stored session', () => {

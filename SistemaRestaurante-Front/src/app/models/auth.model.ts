@@ -1,5 +1,5 @@
 /** PlatformAdmin = quien vende el programa: da de alta restaurantes, no trabaja en ninguno. */
-export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'PlatformAdmin';
+export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'Kitchen' | 'PlatformAdmin';
 
 /** Roles que puede tener el personal de un restaurante. */
 export type RestaurantRole = Exclude<UserRole, 'PlatformAdmin'>;

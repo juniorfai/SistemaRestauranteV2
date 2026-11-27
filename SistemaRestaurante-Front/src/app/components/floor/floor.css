@@ -1,0 +1,59 @@
+.floor-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  color: var(--app-muted);
+}
+.floor-stats strong { color: var(--app-text); }
+.text-ready, .text-ready strong { color: var(--st-confirmed-tx); }
+
+.floor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.85rem;
+}
+
+/* Botón grande: se usa de pie, con una mano, en una tableta. */
+.table-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+  min-height: 132px;
+  padding: 0.85rem;
+  text-align: left;
+  color: var(--app-text);
+  background: var(--app-surface);
+  border: 2px solid var(--app-border);
+  border-radius: 12px;
+  transition: border-color 0.15s, transform 0.05s;
+}
+.table-tile:hover:not(:disabled) { border-color: var(--app-primary); }
+.table-tile:active:not(:disabled) { transform: scale(0.98); }
+.table-tile:focus-visible { outline: 3px solid var(--bs-focus-ring-color); outline-offset: 2px; }
+
+.table-tile.is-free { border-style: dashed; }
+.table-tile.is-busy { background: var(--app-primary-soft); border-color: transparent; }
+.table-tile.is-busy .tile-number, .table-tile.is-busy .tile-total { color: var(--app-primary-soft-text); }
+.table-tile.has-ready { border-color: var(--st-confirmed-tx); }
+.table-tile.is-off { opacity: 0.5; cursor: not-allowed; }
+
+.tile-top { display: flex; justify-content: space-between; align-items: baseline; }
+.tile-number { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.tile-cap { font-size: 0.85rem; color: var(--app-muted); }
+.tile-line { font-size: 0.85rem; color: var(--app-muted); }
+.tile-total { font-size: 1.05rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile-res { font-size: 0.8rem; color: var(--st-completed-tx); }
+.tile-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: auto; }
+
+.mini-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-ready { background: var(--st-confirmed-bg); color: var(--st-confirmed-tx); }
+.badge-draft { background: var(--st-pending-bg); color: var(--st-pending-tx); }
+.badge-kitchen { background: var(--st-completed-bg); color: var(--st-completed-tx); }
+.badge-held { background: var(--st-cancelled-bg); color: var(--st-cancelled-tx); }
