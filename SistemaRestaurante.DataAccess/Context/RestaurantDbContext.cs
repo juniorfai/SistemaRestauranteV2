@@ -31,6 +31,9 @@ namespace SistemaRestaurante.DataAccess.Context
         public DbSet<Reservation> Reservations { get; set; }
         public DbSet<ReservationMenuItem> ReservationMenuItems { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Station> Stations { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,12 +106,86 @@ namespace SistemaRestaurante.DataAccess.Context
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // ---------- Comandas ----------
+            modelBuilder.Entity<Station>(station =>
+            {
+                station.Property(s => s.Name).HasMaxLength(50).IsRequired();
+                station.Property(s => s.PrinterAddress).HasMaxLength(100);
+                station.HasIndex(s => new { s.RestaurantId, s.SortOrder });
+                station.HasOne<Restaurant>()
+                    .WithMany()
+                    .HasForeignKey(s => s.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<MenuItem>()
+                .HasOne(m => m.Station)
+                .WithMany(s => s.MenuItems)
+                .HasForeignKey(m => m.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Restaurant>(restaurant =>
+            {
+                restaurant.Property(r => r.CurrencyCode).HasMaxLength(3).HasDefaultValue("COP");
+                restaurant.Property(r => r.SuggestedTipPercent).HasPrecision(5, 2).HasDefaultValue(10m);
+            });
+
+            modelBuilder.Entity<Order>(order =>
+            {
+                order.Property(o => o.Notes).HasMaxLength(500);
+                order.Property(o => o.CancelReason).HasMaxLength(200);
+                order.Property(o => o.Subtotal).HasPrecision(18, 2);
+                order.Property(o => o.TipAmount).HasPrecision(18, 2);
+                order.Property(o => o.RowVersion).IsRowVersion();
+                order.HasOne<Restaurant>()
+                    .WithMany()
+                    .HasForeignKey(o => o.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                order.HasOne(o => o.Table).WithMany().HasForeignKey(o => o.TableId).OnDelete(DeleteBehavior.Restrict);
+                order.HasOne(o => o.Waiter).WithMany().HasForeignKey(o => o.WaiterId).OnDelete(DeleteBehavior.Restrict);
+                order.HasOne(o => o.Reservation).WithMany().HasForeignKey(o => o.ReservationId).OnDelete(DeleteBehavior.Restrict);
+                order.HasOne<User>().WithMany().HasForeignKey(o => o.ClosedById).OnDelete(DeleteBehavior.Restrict);
+
+                // Una mesa solo puede tener una cuenta abierta: lo garantiza la base de datos,
+                // aunque dos camareros la abran a la vez.
+                order.HasIndex(o => o.TableId)
+                    .IsUnique()
+                    .HasFilter("[Status] = 0 AND [IsActive] = 1")
+                    .HasDatabaseName("IX_Orders_OneOpenPerTable");
+                order.HasIndex(o => new { o.RestaurantId, o.Status });
+                order.HasIndex(o => new { o.RestaurantId, o.ClosedAt });
+            });
+
+            modelBuilder.Entity<OrderItem>(item =>
+            {
+                item.Property(i => i.Name).HasMaxLength(100).IsRequired();
+                item.Property(i => i.Notes).HasMaxLength(200);
+                item.Property(i => i.CancelReason).HasMaxLength(200);
+                item.Property(i => i.UnitPrice).HasPrecision(18, 2);
+                item.Property(i => i.RowVersion).IsRowVersion();
+                item.Ignore(i => i.LineTotal);
+                item.HasOne(i => i.Order).WithMany(o => o.Items).HasForeignKey(i => i.OrderId).OnDelete(DeleteBehavior.Restrict);
+                item.HasOne(i => i.MenuItem).WithMany().HasForeignKey(i => i.MenuItemId).OnDelete(DeleteBehavior.Restrict);
+                item.HasOne(i => i.Station).WithMany().HasForeignKey(i => i.StationId).OnDelete(DeleteBehavior.Restrict);
+                item.HasOne<User>().WithMany().HasForeignKey(i => i.CancelledById).OnDelete(DeleteBehavior.Restrict);
+
+                // Reintentos del dispositivo del camarero: el mismo envío no crea dos platos.
+                item.HasIndex(i => new { i.OrderId, i.ClientRequestId })
+                    .IsUnique()
+                    .HasFilter("[ClientRequestId] IS NOT NULL");
+                // Pantalla de cocina: platos pendientes por zona.
+                item.HasIndex(i => new { i.RestaurantId, i.StationId, i.Status });
+            });
+
             // ---------- Aislamiento por restaurante ----------
             modelBuilder.Entity<Table>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
             modelBuilder.Entity<MenuItem>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
             modelBuilder.Entity<Customer>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
             modelBuilder.Entity<Reservation>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
             modelBuilder.Entity<ReservationMenuItem>().HasQueryFilter(rm => rm.Reservation.RestaurantId == CurrentRestaurantId);
+            modelBuilder.Entity<Station>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
+            modelBuilder.Entity<Order>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
+            modelBuilder.Entity<OrderItem>().HasQueryFilter(e => e.RestaurantId == CurrentRestaurantId);
 
             // El administrador de la plataforma ve todos los restaurantes y usuarios; el resto, solo el suyo.
             modelBuilder.Entity<Restaurant>().HasQueryFilter(r => IsPlatformAdmin || r.Id == CurrentRestaurantId);

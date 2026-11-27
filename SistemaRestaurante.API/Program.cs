@@ -75,6 +75,8 @@ builder.Services.AddScoped<ITableRepository, TableRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IMenuItemRepository, MenuItemRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IStationRepository, StationRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // Services
 builder.Services.AddScoped<IRestaurantService, RestaurantService>();
@@ -83,6 +85,9 @@ builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStationService, StationService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddSingleton<IOrderNotifier, NoOpOrderNotifier>();
 
 // ---------- Autenticación (JWT) y autorización por roles ----------
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);

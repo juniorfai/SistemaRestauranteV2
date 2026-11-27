@@ -1,6 +1,6 @@
 # Restaurante Master: sistema de reservas para restaurantes
 
-Aplicación web para gestionar las **reservas, mesas, clientes y la carta** de un restaurante.
+Aplicación web para gestionar las **reservas, mesas, clientes y la carta** de un restaurante, y el **servicio en mesa**: los camareros toman las comandas y la cocina y la barra las ven en su pantalla.
 
 - **Backend:** API REST en ASP.NET Core 8 con Entity Framework Core y SQL Server.
 - **Frontend:** SPA en Angular 21 (componentes standalone y signals) con Bootstrap 5.
@@ -13,13 +13,19 @@ Aplicación web para gestionar las **reservas, mesas, clientes y la carta** de u
 - **Control de disponibilidad:** una reserva ocupa la mesa 2 horas (`ReservationRules.Duration`). La API impide reservas dobles, incluso con peticiones simultáneas, usando una transacción serializable.
 - **Mesas:** alta, edición, cambio de estado (disponible, ocupada, reservada, fuera de servicio) y baja.
 - **Clientes:** alta, edición, búsqueda y baja. El email es único dentro de cada restaurante.
-- **Carta:** platos por categoría, disponibilidad, alta, edición y baja.
+- **Carta:** platos por categoría, disponibilidad, alérgenos, zona que lo prepara, alta, edición y baja.
+- **Servicio en mesa (comandas):** el camarero abre la cuenta de la mesa (o sienta una reserva, que trae su pedido anticipado), apunta platos con notas («sin cebolla») y tiempos (entrante, principal, postre) y los envía a cocina; puede retener los segundos y «marcharlos» después. Cada plato va a su **zona de preparación** (por defecto Cocina, y Barra para las bebidas; se pueden crear más, con la dirección de su impresora de comandas) y cada zona ve sus comandas pendientes, las pasa a «en preparación» y «listo». Al final se saca la **cuenta provisional** con la propina sugerida (voluntaria, 10 % por defecto) y se cierra indicando forma de pago y propina, lo que libera la mesa. No emite facturas: el cobro y la factura electrónica (DIAN) van por el sistema propio del restaurante.
+  - Una mesa solo tiene una cuenta abierta (lo garantiza la base de datos, aunque dos camareros la abran a la vez); reenviar un pedido por un corte de Wi-Fi no duplica platos; si dos pantallas cambian el mismo plato a la vez, la segunda recibe `409` y se actualiza.
+  - Nombre y precio se copian al pedir: cambiar la carta no altera cuentas abiertas ni cerradas. Lo enviado no se borra: lo anula el encargado indicando el motivo.
+  - Moneda (COP por defecto) y propina sugerida se configuran por restaurante.
 - **Varios restaurantes:** un mismo programa da servicio a varios restaurantes con los datos separados. Cada usuario pertenece a un restaurante y solo ve sus mesas, carta, clientes, reservas y personal; la base de datos aplica el filtro en todas las consultas, y pedir un dato de otro restaurante devuelve `404`.
 - **Administración de la plataforma:** un usuario especial (rol `PlatformAdmin`, sin restaurante) da de alta restaurantes junto con su primer administrador, edita sus datos y los suspende o reactiva. Un restaurante suspendido no puede entrar y sus sesiones abiertas se cierran; sus datos se conservan. Puede ver todo el personal y ponerle una contraseña nueva (soporte), pero no ve ni toca reservas, clientes, mesas ni carta.
 - **Acceso con usuario y roles:** cada persona entra con su usuario. En cada restaurante hay tres roles:
   - **Administrador:** todo, incluida la gestión del personal (pantalla «Personal») y los datos del restaurante (pantalla «Mi restaurante»).
   - **Encargado:** reservas, clientes, mesas y carta.
-  - **Camarero / sala:** reservas, alta y edición de clientes, y cambio de estado de las mesas. No borra clientes ni cambia la carta ni las mesas.
+  - **Camarero / sala:** reservas, alta y edición de clientes, cambio de estado de las mesas y comandas (abrir, apuntar, enviar, servir, cobrar). No borra clientes, no cambia la carta ni las mesas y no anula lo enviado a cocina.
+  - **Cocina:** solo la pantalla de cocina y barra (comandas pendientes y su estado).
+  - Encargado y administrador, además, anulan platos enviados o cuentas enteras (con motivo) y ven el histórico de cuentas por día.
 - **Borrado lógico:** nada se borra de verdad (`IsActive = false`), así se conserva el historial.
 
 ## Estructura
@@ -61,6 +67,7 @@ dotnet run --launch-profile https
   | `admin` | `Admin123!` | Administrador |
   | `encargado` | `Encargado123!` | Encargado |
   | `camarero` | `Camarero123!` | Camarero / sala |
+  | `cocina` | `Cocina123!` | Pantalla de cocina |
 
 - Para crear migraciones usa la herramienta local del proyecto (versión 8): `dotnet tool restore` y después `dotnet tool run dotnet-ef migrations add Nombre --project SistemaRestaurante.DataAccess --startup-project SistemaRestaurante.API`.
 
@@ -150,6 +157,7 @@ Son pruebas de integración: cada clase levanta la API completa en memoria contr
 - **Permisos por rol** (administrador, encargado, camarero) y del administrador de la plataforma, incluida la suspensión de restaurantes.
 - **Sesión:** token falso, cambio de contraseña y usuario desactivado cierran sesiones, límite de intentos de login.
 - **Reservas:** choque de horario (2 h), peticiones simultáneas a la misma mesa (solo una se guarda), capacidad, mesas fuera de servicio, fechas pasadas, cambios de estado, total del pedido anticipado.
+- **Comandas:** flujo completo de la mesa al cobro, zonas (Cocina/Barra por defecto, borrado protegido), una cuenta abierta por mesa con aperturas simultáneas, reintentos sin duplicados, platos retenidos y marchados, cambios de estado desde dos pantallas, anulaciones con motivo, cierre con platos pendientes, propina redondeada a pesos, sentar una reserva, permisos del rol Cocina y separación entre restaurantes.
 
 Por defecto usan LocalDB. Para otro servidor, define `TEST_SQLSERVER` con la cadena de conexión **sin** base de datos, por ejemplo `Server=localhost,1433;User Id=sa;Password=...;TrustServerCertificate=True`.
 
@@ -208,6 +216,9 @@ Los errores siguen el formato **ProblemDetails**: `401` sin sesión válida, `40
 | Mesas | `GET /api/Table`, `GET /api/Table/available?dateTime=...&numberOfPeople=...`, `POST`, `PUT /{id}`, `PATCH /{id}/status`, `DELETE /{id}` |
 | Clientes | `GET /api/Customer`, `GET /api/Customer/{id}`, `GET /api/Customer/email/{email}`, `POST`, `PUT /{id}`, `DELETE /{id}` |
 | Carta | `GET /api/MenuItem?includeUnavailable=true`, `GET /api/MenuItem/category/{categoria}`, `POST`, `PUT /{id}`, `DELETE /{id}` |
+| Zonas | `GET /api/Station`, `POST`, `PUT /{id}`, `DELETE /{id}` (escritura: encargado o administrador) |
+| Comandas | `GET /api/Order/open`, `GET /api/Order/{id}`, `POST /api/Order` (`tableId`, `guests`, `reservationId?`), `POST /{id}/items` (`items[]` con `menuItemId`, `quantity`, `notes`, `course`, `clientRequestId`), `PUT`/`DELETE /{id}/items/{itemId}` (solo borradores), `POST /{id}/send` (`holdFromCourse?`), `POST /{id}/fire` (`course`), `PUT /{id}/items/{itemId}/status`, `PUT /{id}/table`, `PUT /{id}/guests`, `GET /{id}/bill`, `POST /{id}/close` (`paymentMethod`, `tipAmount`). Encargado: `POST /{id}/items/{itemId}/cancel`, `POST /{id}/cancel` (`reason`), `GET /api/Order/history?date=yyyy-MM-dd` |
+| Cocina | `GET /api/Kitchen/tickets?stationId=`, `PUT /api/Kitchen/orders/{id}/items/{itemId}/status` (`status`, `expectedStatus`), `POST /api/Kitchen/orders/{id}/stations/{stationId}/bump` (todo listo) |
 | Restaurantes | `GET /api/Restaurant/current` (el del usuario). Plataforma: `GET /api/Restaurant`, `POST` (con `adminUsername`, `adminFullName`, `adminPassword`), `PATCH /{id}/active`. `GET /{id}` y `PUT /{id}`: plataforma o administrador de ese restaurante |
 
 Hay ejemplos listos para ejecutar en `SistemaRestaurante.API/SistemaRestaurante.API.http`.

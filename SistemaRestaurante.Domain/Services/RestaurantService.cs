@@ -11,17 +11,20 @@ namespace SistemaRestaurante.Domain.Services
     {
         private readonly IRestaurantRepository _restaurantRepository;
         private readonly IUserService _userService;
+        private readonly IStationService _stationService;
         private readonly ITenantContext _tenant;
         private readonly ILogger<RestaurantService> _logger;
 
         public RestaurantService(
             IRestaurantRepository restaurantRepository,
             IUserService userService,
+            IStationService stationService,
             ITenantContext tenant,
             ILogger<RestaurantService> logger)
         {
             _restaurantRepository = restaurantRepository;
             _userService = userService;
+            _stationService = stationService;
             _tenant = tenant;
             _logger = logger;
         }
@@ -49,6 +52,7 @@ namespace SistemaRestaurante.Domain.Services
             var created = await _restaurantRepository.CreateAsync(restaurant);
 
             await _userService.CreateForRestaurantAsync(created.Id, adminUsername, adminFullName, UserRole.Admin, adminPassword);
+            await _stationService.CreateDefaultsForAsync(created.Id);
 
             _logger.LogInformation("Created restaurant {RestaurantId} ({Name}) with admin {Username}",
                 created.Id, created.Name, adminUsername);
@@ -83,6 +87,12 @@ namespace SistemaRestaurante.Domain.Services
             target.PhoneNumber = source.PhoneNumber.Trim();
             target.Email = source.Email.Trim().ToLowerInvariant();
             target.OpeningHours = string.IsNullOrWhiteSpace(source.OpeningHours) ? null : source.OpeningHours.Trim();
+            target.CurrencyCode = string.IsNullOrWhiteSpace(source.CurrencyCode) ? "COP" : source.CurrencyCode.Trim().ToUpperInvariant();
+            if (target.CurrencyCode.Length != 3 || !target.CurrencyCode.All(char.IsAsciiLetterUpper))
+                throw new ArgumentException("La moneda debe ser un código de 3 letras (p. ej. COP)");
+            if (source.SuggestedTipPercent < 0 || source.SuggestedTipPercent > 30)
+                throw new ArgumentException("La propina sugerida debe estar entre 0 % y 30 %");
+            target.SuggestedTipPercent = source.SuggestedTipPercent;
         }
     }
 }

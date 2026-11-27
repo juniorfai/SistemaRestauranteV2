@@ -40,7 +40,7 @@ namespace SistemaRestaurante.API.Controllers
 
         /// <summary>Restaurante del usuario conectado.</summary>
         [HttpGet("current")]
-        [Authorize(Roles = Roles.RestaurantStaff)]
+        [Authorize(Roles = Roles.AllRestaurantRoles)]
         public async Task<ActionResult<RestaurantResponseDTO>> GetCurrent()
         {
             return Ok(_mapper.Map<RestaurantResponseDTO>(await _restaurantService.GetCurrentAsync()));

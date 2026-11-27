@@ -44,7 +44,7 @@ services:
       Auth__PlatformAdmin__Password: ${PLATFORM_ADMIN_PASSWORD:-}
       # Está detrás de Caddy: la IP real del cliente llega en X-Forwarded-For.
       ReverseProxy__Enabled: "true"
-      TZ: ${TZ:-Europe/Madrid}
+      TZ: ${TZ:-America/Bogota}
 
   web:
     build:

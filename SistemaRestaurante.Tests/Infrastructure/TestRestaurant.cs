@@ -43,14 +43,16 @@ namespace SistemaRestaurante.Tests.Infrastructure
             });
         }
 
-        public Task<MenuItemDto> AddMenuItemAsync(decimal price = 10m, bool isAvailable = true) =>
+        public Task<MenuItemDto> AddMenuItemAsync(decimal price = 10m, bool isAvailable = true, string category = "MainCourse",
+            int? stationId = null) =>
             Admin.PostOkAsync<MenuItemDto>("/api/MenuItem", new
             {
                 name = $"Plato {Guid.NewGuid().ToString("N")[..6]}",
                 description = "De prueba",
                 price,
-                category = "MainCourse",
+                category,
                 isAvailable,
+                stationId,
             });
 
         /// <summary>Da de alta a alguien del personal y devuelve su sesión.</summary>
