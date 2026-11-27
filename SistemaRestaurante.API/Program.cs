@@ -11,6 +11,7 @@ using Microsoft.OpenApi.Models;
 using SistemaRestaurante.API.Auth;
 using SistemaRestaurante.API.Controllers;
 using SistemaRestaurante.API.Middlewares;
+using SistemaRestaurante.API.Realtime;
 using SistemaRestaurante.DataAccess.Context;
 using SistemaRestaurante.DataAccess.Repositories;
 using SistemaRestaurante.DataAccess.Seeders;
@@ -87,7 +88,9 @@ builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddSingleton<IOrderNotifier, NoOpOrderNotifier>();
+// Tiempo real: las pantallas de cocina y sala reciben los cambios al momento.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IOrderNotifier, SignalROrderNotifier>();
 
 // ---------- Autenticación (JWT) y autorización por roles ----------
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
@@ -121,6 +124,15 @@ builder.Services
         // o si su restaurante se suspende.
         options.Events = new JwtBearerEvents
         {
+            // El navegador no puede poner cabeceras en un WebSocket: SignalR manda el token en
+            // la URL (?access_token=), y solo se acepta así en la ruta del hub.
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments(OrdersHub.Path))
+                    context.Token = token;
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var principal = context.Principal!;
@@ -212,6 +224,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+// Al caducar el token se cierra la conexión; el cliente vuelve a conectar con la sesión vigente.
+app.MapHub<OrdersHub>(OrdersHub.Path, options => options.CloseOnAuthenticationExpiration = true);
 app.MapHealthChecks("/api/health").AllowAnonymous();
 
 // Migraciones y datos de ejemplo: solo si la configuración lo pide (activado en Development).

@@ -1,0 +1,128 @@
+<div class="page-header">
+  <div>
+    <h2>Cocina</h2>
+    <p>Toca un plato para marcarlo en preparación y otra vez cuando esté listo.</p>
+  </div>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="live-dot" [class]="'live-dot is-' + realtime.status()" role="status">
+      @switch (realtime.status()) {
+        @case ('online') { En vivo }
+        @case ('off') { Sin conexión }
+        @default { Reconectando… }
+      }
+    </span>
+    <button type="button" class="btn btn-outline-secondary" (click)="toggleSound()"
+            [attr.aria-pressed]="soundOn()" [title]="soundOn() ? 'Silenciar avisos' : 'Activar sonido de comandas nuevas'">
+      <i class="bi" [class.bi-volume-up-fill]="soundOn()" [class.bi-volume-mute]="!soundOn()" aria-hidden="true"></i>
+      <span class="ms-1 d-none d-sm-inline">{{ soundOn() ? 'Sonido' : 'Silencio' }}</span>
+    </button>
+    <button type="button" class="btn btn-outline-secondary" (click)="toggleFullscreen()"
+            [attr.aria-label]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'">
+      <i class="bi" [class.bi-fullscreen-exit]="fullscreen()" [class.bi-arrows-fullscreen]="!fullscreen()" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()" title="Actualizar">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+  @if (stations().length > 1) {
+    <div class="segmented" role="group" aria-label="Zona de preparación">
+      <button type="button" [class.active]="stationId() === null" (click)="selectStation(null)">Todas</button>
+      @for (s of stations(); track s.id) {
+        <button type="button" [class.active]="stationId() === s.id" (click)="selectStation(s.id)">{{ s.name }}</button>
+      }
+    </div>
+  }
+  <span class="text-muted ms-auto">
+    <strong class="text-body">{{ active().length }}</strong> comandas ·
+    <strong class="text-body">{{ pendingDishes() }}</strong> platos por hacer
+  </span>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="text-center py-5"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div></div>
+} @else if (active().length === 0) {
+  <div class="empty-kitchen">
+    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+    <p class="mb-0">No hay nada pendiente.</p>
+  </div>
+} @else {
+  <div class="kitchen-grid">
+    @for (v of active(); track v.key) {
+      <article class="ticket" [class]="'ticket is-' + v.urgency">
+        <header class="ticket-head">
+          <div>
+            <span class="ticket-table">Mesa {{ v.ticket.tableNumber }}</span>
+            <span class="ticket-meta">{{ v.ticket.guests }} pax · {{ v.ticket.waiterName }}
+              @if (stationId() === null && stations().length > 1) { · {{ v.ticket.stationName }} }
+            </span>
+          </div>
+          <span class="ticket-time">{{ elapsedLabel(v.minutes) }}</span>
+        </header>
+
+        <div class="ticket-body">
+          @for (g of v.courses; track g.course) {
+            <div class="ticket-course">{{ courseLabels[g.course] }}</div>
+            @for (item of g.items; track item.id) {
+              <button type="button" class="ticket-item" [class]="'ticket-item st-' + item.status"
+                      [disabled]="item.status === 'Held' || isBusy('item-' + item.id)"
+                      (click)="advance(v.ticket, item)"
+                      [attr.aria-label]="item.quantity + ' ' + item.name + ', ' + statusLabels[item.status]">
+                <span class="item-qty">{{ item.quantity }}</span>
+                <span class="item-text">
+                  <span class="item-name">{{ item.name }}</span>
+                  @if (item.notes) { <span class="item-notes"><i class="bi bi-exclamation-circle-fill me-1"></i>{{ item.notes }}</span> }
+                </span>
+                <span class="item-status">
+                  @switch (item.status) {
+                    @case ('Preparing') { <i class="bi bi-fire"></i> }
+                    @case ('Ready') { <i class="bi bi-check-lg"></i> }
+                    @case ('Held') { En espera }
+                  }
+                </span>
+              </button>
+            }
+          }
+        </div>
+
+        <footer class="ticket-foot">
+          <button type="button" class="btn btn-primary w-100" [disabled]="isBusy(v.key)" (click)="bump(v.ticket)">
+            <i class="bi bi-check2-all me-1"></i>Todo listo
+          </button>
+        </footer>
+      </article>
+    }
+  </div>
+}
+
+@if (done().length > 0) {
+  <section class="mt-4">
+    <button type="button" class="btn btn-link px-0 text-decoration-none" (click)="showDone.set(!showDone())"
+            [attr.aria-expanded]="showDone()">
+      <i class="bi" [class.bi-chevron-down]="showDone()" [class.bi-chevron-right]="!showDone()"></i>
+      Despachadas, esperando a sala ({{ done().length }})
+    </button>
+    @if (showDone()) {
+      <ul class="done-list">
+        @for (t of done(); track t.orderId + '-' + t.stationId) {
+          <li>
+            <span><strong>Mesa {{ t.tableNumber }}</strong> · {{ t.stationName }} · {{ readySummary(t) }}</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="isBusy(t.orderId + '-' + t.stationId)"
+                    (click)="recall(t)">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Recuperar
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

@@ -1,20 +1,22 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { debounceTime, forkJoin, merge } from 'rxjs';
 import { OrderResponseDTO } from '../../models/order.model';
 import { ReservationResponseDTO } from '../../models/reservation.model';
 import { TableResponseDTO } from '../../models/table.model';
 import { AuthService } from '../../services/auth.service';
 import { MoneyPipe } from '../../services/money.service';
 import { OrderService } from '../../services/order.service';
+import { RealtimeService } from '../../services/realtime.service';
 import { ReservationService } from '../../services/reservation.service';
 import { TableService } from '../../services/table.service';
 import { apiErrorMessage } from '../../utils/api-error';
 import { toDateInputValue } from '../../utils/labels';
 import { OrderSummary, formatElapsed, minutesSince, summarize } from '../../utils/order-utils';
 
-/** Cada cuánto se refresca el plano mientras no haya tiempo real (llega en la fase C). */
+/** Cada cuánto se refresca el plano si se cae el tiempo real (y se actualizan los minutos). */
 const REFRESH_MS = 15_000;
 
 interface TableTile {
@@ -103,10 +105,20 @@ export class FloorComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly myId = computed(() => this.auth.user()?.id ?? null);
 
+  private readonly realtime = inject(RealtimeService);
+
   constructor() {
+    // Cualquier cambio en una cuenta (o al reconectar) actualiza el plano; si varios llegan
+    // seguidos, se recarga una sola vez.
+    merge(this.realtime.orderChanged$, this.realtime.resync$)
+      .pipe(debounceTime(500), takeUntilDestroyed())
+      .subscribe(() => {
+        if (!this.seating()) this.load(false);
+      });
+
     const timer = setInterval(() => {
       this.now.set(Date.now());
-      if (!document.hidden && !this.seating()) this.load(false);
+      if (this.realtime.status() !== 'online' && !document.hidden && !this.seating()) this.load(false);
     }, REFRESH_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }

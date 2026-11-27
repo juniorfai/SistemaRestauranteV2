@@ -1,0 +1,131 @@
+/* Pensada para una pantalla o tableta en la pared: letra grande y botones anchos. */
+.kitchen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.ticket {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface);
+  border: 2px solid var(--app-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ticket-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--app-surface-2);
+}
+.ticket-table { display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+.ticket-meta { font-size: 0.85rem; color: var(--app-muted); }
+.ticket-time {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.5rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Tiempo de espera: verde, ámbar (10 min) y rojo (20 min). */
+.ticket.is-ok .ticket-time { background: var(--st-confirmed-bg); color: var(--st-confirmed-tx); }
+.ticket.is-warn { border-color: var(--st-pending-tx); }
+.ticket.is-warn .ticket-time { background: var(--st-pending-bg); color: var(--st-pending-tx); }
+.ticket.is-late { border-color: var(--st-danger-tx); }
+.ticket.is-late .ticket-head { background: var(--st-danger-bg); }
+.ticket.is-late .ticket-time { background: var(--st-danger-tx); color: var(--app-surface); }
+
+.ticket-body { padding: 0.35rem 0.5rem 0.5rem; }
+.ticket-course {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+  margin: 0.5rem 0.35rem 0.2rem;
+}
+
+.ticket-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.5rem 0.55rem;
+  margin-bottom: 0.25rem;
+  text-align: left;
+  font-size: 1.05rem;
+  color: var(--app-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.ticket-item:hover:not(:disabled) { border-color: var(--app-border); }
+.ticket-item:focus-visible { outline: 3px solid var(--bs-focus-ring-color); outline-offset: 1px; }
+.item-qty { min-width: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.item-text { flex: 1; display: flex; flex-direction: column; }
+.item-name { font-weight: 600; }
+.item-notes {
+  margin-top: 0.15rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--st-pending-tx);
+  background: var(--st-pending-bg);
+  border-radius: 6px;
+  align-self: flex-start;
+}
+.item-status { font-size: 1.1rem; white-space: nowrap; }
+
+.ticket-item.st-Preparing { background: var(--st-completed-bg); }
+.ticket-item.st-Preparing .item-status { color: var(--st-completed-tx); }
+.ticket-item.st-Ready { background: var(--st-confirmed-bg); }
+.ticket-item.st-Ready .item-name { text-decoration: line-through; color: var(--st-confirmed-tx); }
+.ticket-item.st-Ready .item-status { color: var(--st-confirmed-tx); }
+.ticket-item.st-Held { opacity: 0.55; cursor: default; }
+.ticket-item.st-Held .item-status { font-size: 0.8rem; color: var(--app-muted); }
+
+.ticket-foot { padding: 0.5rem; margin-top: auto; border-top: 1px solid var(--app-border); }
+.ticket-foot .btn { min-height: 46px; font-weight: 600; }
+
+.empty-kitchen {
+  padding: 4rem 1rem;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 1.1rem;
+}
+.empty-kitchen .bi { font-size: 3rem; display: block; margin-bottom: 0.5rem; color: var(--st-confirmed-tx); }
+
+.done-list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.done-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--app-muted);
+  margin-right: 0.25rem;
+}
+.live-dot::before {
+  content: '';
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--st-danger-tx);
+}
+.live-dot.is-online::before { background: var(--st-confirmed-tx); }
+.live-dot.is-connecting::before, .live-dot.is-reconnecting::before { background: var(--st-pending-tx); }

@@ -144,3 +144,38 @@
   .nav-links { flex-direction: row; justify-content: space-around; flex: 1; }
   .content { padding: 1.25rem 1rem 6rem; }
 }
+
+/* ---------- Aviso de platos listos (para el camarero) ---------- */
+.ready-toasts {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(360px, calc(100vw - 2rem));
+}
+.ready-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--st-confirmed-bg);
+  color: var(--st-confirmed-tx);
+  border: 1px solid var(--st-confirmed-tx);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+.ready-toast-body {
+  flex: 1;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+.ready-toast-body .bi { font-size: 1.2rem; }

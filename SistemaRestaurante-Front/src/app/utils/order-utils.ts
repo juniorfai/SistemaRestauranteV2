@@ -1,5 +1,12 @@
 import { Allergen, MenuItemCategory, MenuItemResponseDTO } from '../models/menu.model';
-import { AddOrderItemDTO, OrderCourse, OrderItemResponseDTO, OrderResponseDTO } from '../models/order.model';
+import {
+  AddOrderItemDTO,
+  KitchenTicketDTO,
+  OrderCourse,
+  OrderItemResponseDTO,
+  OrderItemStatus,
+  OrderResponseDTO,
+} from '../models/order.model';
 import { COURSES, DEFAULT_COURSE } from './labels';
 
 /** Plato apuntado en la tableta que aún no ha llegado a la API. */
@@ -113,4 +120,59 @@ export function formatElapsed(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h} h ${m.toString().padStart(2, '0')}`;
+}
+
+// ---------- Pantalla de cocina ----------
+
+/** Minutos a partir de los que una comanda se marca en ámbar y en rojo. */
+export const KITCHEN_WARN_MIN = 10;
+export const KITCHEN_LATE_MIN = 20;
+
+export type Urgency = 'ok' | 'warn' | 'late';
+
+export function urgency(minutes: number): Urgency {
+  if (minutes >= KITCHEN_LATE_MIN) return 'late';
+  if (minutes >= KITCHEN_WARN_MIN) return 'warn';
+  return 'ok';
+}
+
+/** Al tocar un plato: enviado → preparando → listo; si ya estaba listo, vuelve a preparando. */
+export function nextKitchenStatus(status: OrderItemStatus): OrderItemStatus | null {
+  switch (status) {
+    case 'Sent': return 'Preparing';
+    case 'Preparing': return 'Ready';
+    case 'Ready': return 'Preparing';
+    default: return null;
+  }
+}
+
+const isPending = (s: OrderItemStatus) => s === 'Sent' || s === 'Preparing';
+
+export function ticketKey(t: Pick<KitchenTicketDTO, 'orderId' | 'stationId'>): string {
+  return `${t.orderId}-${t.stationId}`;
+}
+
+/** Desde cuándo espera lo pendiente de la comanda (lo retenido no cuenta). */
+export function ticketStart(t: KitchenTicketDTO): string {
+  const sent = t.items.filter((i) => isPending(i.status)).map((i) => i.sentAt).filter((d): d is string => !!d);
+  return sent.length ? sent.reduce((a, b) => (a < b ? a : b)) : t.firstSentAt;
+}
+
+/**
+ * Separa lo que hay que preparar (la más antigua primero) de lo ya despachado que espera a que
+ * sala lo recoja (por si hay que recuperarlo). Las comandas solo con platos retenidos no salen.
+ */
+export function splitTickets(tickets: KitchenTicketDTO[]): { active: KitchenTicketDTO[]; done: KitchenTicketDTO[] } {
+  const active = tickets
+    .filter((t) => t.items.some((i) => isPending(i.status)))
+    .sort((a, b) => ticketStart(a).localeCompare(ticketStart(b)) || a.orderId - b.orderId);
+  const done = tickets
+    .filter((t) => !t.items.some((i) => isPending(i.status)) && t.items.some((i) => i.status === 'Ready'))
+    .sort((a, b) => b.orderId - a.orderId);
+  return { active, done };
+}
+
+/** Platos que acaban de llegar a cocina (para el aviso sonoro). */
+export function newPendingItemIds(tickets: KitchenTicketDTO[], seen: ReadonlySet<number>): number[] {
+  return tickets.flatMap((t) => t.items).filter((i) => i.status === 'Sent' && !seen.has(i.id)).map((i) => i.id);
 }

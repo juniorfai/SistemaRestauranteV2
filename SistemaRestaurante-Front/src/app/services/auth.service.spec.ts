@@ -92,7 +92,7 @@ describe('AuthService + authInterceptor', () => {
     expect(auth.isPlatformAdmin()).toBe(true);
     expect(auth.homeUrl()).toBe('/restaurantes');
 
-    for (const [role, home] of [['Admin', '/reservas'], ['Manager', '/reservas'], ['Kitchen', '/cuenta']] as const) {
+    for (const [role, home] of [['Admin', '/reservas'], ['Manager', '/reservas'], ['Kitchen', '/cocina']] as const) {
       auth.login({ username: role, password: 'x' }).subscribe();
       http.expectOne(`${environment.apiUrl}/Auth/login`).flush({ ...LOGIN, user: { ...LOGIN.user, role } });
       expect(auth.homeUrl()).toBe(home);

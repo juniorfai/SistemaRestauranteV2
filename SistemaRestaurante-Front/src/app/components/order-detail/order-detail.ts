@@ -1,7 +1,8 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Observable, forkJoin, of, switchMap } from 'rxjs';
+import { Observable, debounceTime, filter, forkJoin, merge, of, switchMap } from 'rxjs';
 import { MenuItemCategory, MenuItemResponseDTO } from '../../models/menu.model';
 import { OrderCourse, OrderItemResponseDTO, OrderResponseDTO } from '../../models/order.model';
 import { TableResponseDTO } from '../../models/table.model';
@@ -9,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
 import { MenuService } from '../../services/menu.service';
 import { MoneyPipe } from '../../services/money.service';
 import { OrderService } from '../../services/order.service';
+import { RealtimeService } from '../../services/realtime.service';
 import { TableService } from '../../services/table.service';
 import { apiErrorMessage } from '../../utils/api-error';
 import {
@@ -32,6 +34,7 @@ import {
   toAddItems,
 } from '../../utils/order-utils';
 
+/** Sin tiempo real (conexión caída) se recarga cada 10 s. */
 const REFRESH_MS = 10_000;
 const BATCH_KEY = (orderId: number) => `rm-batch-${orderId}`;
 
@@ -110,10 +113,19 @@ export class OrderDetailComponent implements OnInit {
       this.drafts().some((i) => i.course === 'Main' || i.course === 'Dessert'),
   );
 
+  private readonly realtime = inject(RealtimeService);
+
   constructor() {
+    // Cocina u otro camarero tocaron esta cuenta: se recarga al momento.
+    merge(this.realtime.orderChanged$.pipe(filter((e) => e.orderId === this.orderId())), this.realtime.resync$)
+      .pipe(debounceTime(300), takeUntilDestroyed())
+      .subscribe(() => {
+        if (!this.busy() && this.order()) this.refresh();
+      });
+
     const timer = setInterval(() => {
       this.now.set(Date.now());
-      if (!document.hidden && !this.busy() && this.isOpen()) this.refresh();
+      if (this.realtime.status() !== 'online' && !document.hidden && !this.busy() && this.isOpen()) this.refresh();
     }, REFRESH_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
