@@ -44,8 +44,14 @@
             }
           </div>
           <h4 class="card-title mb-1">{{ plato.name }}</h4>
-          <h5 class="text-price mb-2">{{ plato.price | currency }}</h5>
+          <h5 class="text-price mb-2">{{ plato.price | money }}</h5>
           <p class="card-text text-muted flex-grow-1 small">{{ plato.description }}</p>
+          <div class="small text-muted mb-2">
+            <i class="bi bi-fire me-1"></i>{{ plato.stationName }}
+            @if (plato.allergens.length) {
+              <span class="d-block text-note mt-1"><i class="bi bi-exclamation-diamond me-1"></i>{{ allergenText(plato) }}</span>
+            }
+          </div>
           @if (auth.canManage()) {
             <div class="d-flex justify-content-end gap-1 mt-auto">
               <a [routerLink]="['/menu/editar', plato.id]" class="btn btn-sm btn-outline-secondary" title="Editar">

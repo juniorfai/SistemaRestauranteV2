@@ -8,6 +8,8 @@ export type RestaurantForm = FormGroup<{
   phoneNumber: FormControl<string>;
   email: FormControl<string>;
   openingHours: FormControl<string>;
+  currencyCode: FormControl<string>;
+  suggestedTipPercent: FormControl<number>;
 }>;
 
 /** Mismas reglas que la API (RestaurantRequestDTO). */
@@ -18,6 +20,8 @@ export function buildRestaurantForm(fb: FormBuilder): RestaurantForm {
     phoneNumber: ['', [Validators.required, Validators.pattern(/^\+?[0-9\s-]{7,20}$/)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     openingHours: ['', Validators.maxLength(200)],
+    currencyCode: ['COP', [Validators.required, Validators.pattern(/^[A-Za-z]{3}$/)]],
+    suggestedTipPercent: [10, [Validators.required, Validators.min(0), Validators.max(30)]],
   });
 }
 
@@ -28,6 +32,8 @@ export function restaurantFormValue(restaurant?: RestaurantResponseDTO | null) {
     phoneNumber: restaurant?.phoneNumber ?? '',
     email: restaurant?.email ?? '',
     openingHours: restaurant?.openingHours ?? '',
+    currencyCode: restaurant?.currencyCode ?? 'COP',
+    suggestedTipPercent: restaurant?.suggestedTipPercent ?? 10,
   };
 }
 
@@ -39,6 +45,8 @@ export function toRestaurantRequest(form: RestaurantForm): RestaurantRequestDTO 
     phoneNumber: v.phoneNumber.trim(),
     email: v.email.trim(),
     openingHours: v.openingHours.trim() || null,
+    currencyCode: v.currencyCode.trim().toUpperCase(),
+    suggestedTipPercent: Number(v.suggestedTipPercent),
   };
 }
 
@@ -78,6 +86,24 @@ export function toRestaurantRequest(form: RestaurantForm): RestaurantRequestDTO 
         <input id="r-hours" class="form-control" formControlName="openingHours" autocomplete="off"
                placeholder="Ej.: L-D 13:00-16:00 y 20:00-23:30" [class.is-invalid]="invalid('openingHours')">
         <div class="invalid-feedback">Máximo 200 caracteres.</div>
+      </div>
+      <div class="col-md-6">
+        <label for="r-currency" class="form-label">Moneda</label>
+        <select id="r-currency" class="form-select" formControlName="currencyCode">
+          <option value="COP">Peso colombiano (COP)</option>
+          <option value="USD">Dólar estadounidense (USD)</option>
+          <option value="MXN">Peso mexicano (MXN)</option>
+          <option value="PEN">Sol peruano (PEN)</option>
+          <option value="CLP">Peso chileno (CLP)</option>
+          <option value="EUR">Euro (EUR)</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="r-tip" class="form-label">Propina sugerida en la cuenta (%)</label>
+        <input id="r-tip" type="number" min="0" max="30" step="1" class="form-control" formControlName="suggestedTipPercent"
+               [class.is-invalid]="invalid('suggestedTipPercent')">
+        <div class="form-text">Se muestra como voluntaria. 0 para no sugerir ninguna.</div>
+        <div class="invalid-feedback">Entre 0 y 30.</div>
       </div>
     </div>
   `,

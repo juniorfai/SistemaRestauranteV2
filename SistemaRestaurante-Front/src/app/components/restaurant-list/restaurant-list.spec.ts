@@ -9,8 +9,8 @@ import { RestaurantListComponent } from './restaurant-list';
 
 const API = `${environment.apiUrl}/Restaurant`;
 const RESTAURANTS: RestaurantResponseDTO[] = [
-  { id: 2, name: 'Zoco', address: 'C/ 2', phoneNumber: '600000002', email: 'z@x.es', isActive: false, createdAt: '2026-11-01T10:00:00' },
-  { id: 1, name: 'Asador', address: 'C/ 1', phoneNumber: '600000001', email: 'a@x.es', isActive: true, createdAt: '2026-10-01T10:00:00' },
+  { id: 2, name: 'Zoco', address: 'C/ 2', phoneNumber: '600000002', email: 'z@x.es', currencyCode: 'COP', suggestedTipPercent: 10, isActive: false, createdAt: '2026-11-01T10:00:00' },
+  { id: 1, name: 'Asador', address: 'C/ 1', phoneNumber: '600000001', email: 'a@x.es', currencyCode: 'COP', suggestedTipPercent: 10, isActive: true, createdAt: '2026-10-01T10:00:00' },
 ];
 
 registerLocaleData(localeEs);
@@ -44,14 +44,14 @@ describe('RestaurantListComponent', () => {
 
   it('creates a restaurant together with its first admin', () => {
     component.openNew();
-    component.form.setValue({ name: ' Nuevo ', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: '' });
+    component.form.setValue({ name: ' Nuevo ', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: '', currencyCode: 'cop', suggestedTipPercent: 10 });
     component.adminForm.setValue({ adminFullName: 'Ana', adminUsername: 'ana', adminPassword: 'Secreta123' });
     component.save();
 
     const req = http.expectOne(API);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      name: 'Nuevo', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: null,
+      name: 'Nuevo', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: null, currencyCode: 'COP', suggestedTipPercent: 10,
       adminFullName: 'Ana', adminUsername: 'ana', adminPassword: 'Secreta123',
     });
     req.flush({ ...RESTAURANTS[1], id: 3, name: 'Nuevo' });
@@ -61,7 +61,7 @@ describe('RestaurantListComponent', () => {
 
   it('does not send the form without the admin data', () => {
     component.openNew();
-    component.form.setValue({ name: 'Nuevo', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: '' });
+    component.form.setValue({ name: 'Nuevo', address: 'C/ 3', phoneNumber: '600000003', email: 'n@x.es', openingHours: '', currencyCode: 'cop', suggestedTipPercent: 10 });
     component.save();
     http.expectNone(API);
   });

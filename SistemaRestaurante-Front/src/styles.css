@@ -237,3 +237,11 @@ h1, h2, h3, h4, h5 { font-weight: 600; color: var(--app-text); }
 
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--app-muted); }
 .empty-state i { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+
+/* Selector numérico grande (comensales), cómodo en tableta. */
+.stepper { display: inline-flex; align-items: center; gap: 0.5rem; }
+.stepper .btn { min-width: 44px; min-height: 44px; }
+.stepper-value { min-width: 2ch; text-align: center; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Casillas de alérgenos en el formulario de la carta. */
+.allergen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.25rem 1rem; }

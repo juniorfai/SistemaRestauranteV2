@@ -2,10 +2,12 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MenuItemCategory, MenuItemRequestDTO } from '../../models/menu.model';
+import { Allergen, MenuItemCategory, MenuItemRequestDTO } from '../../models/menu.model';
+import { StationResponseDTO } from '../../models/order.model';
+import { StationService } from '../../services/station.service';
 import { MenuService } from '../../services/menu.service';
 import { apiErrorMessage } from '../../utils/api-error';
-import { MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
+import { ALLERGENS, ALLERGEN_LABELS, MENU_CATEGORIES, MENU_CATEGORY_LABELS } from '../../utils/labels';
 
 @Component({
   selector: 'app-menu-form',
@@ -18,9 +20,13 @@ export class MenuFormComponent implements OnInit {
   private readonly menuService = inject(MenuService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly stationService = inject(StationService);
 
   readonly categories = MENU_CATEGORIES;
   readonly categoryLabels = MENU_CATEGORY_LABELS;
+  readonly allergenOptions = ALLERGENS;
+  readonly allergenLabels = ALLERGEN_LABELS;
+  readonly stations = signal<StationResponseDTO[]>([]);
 
   readonly itemId = signal<number | null>(null);
   readonly isEditMode = computed(() => this.itemId() !== null);
@@ -33,9 +39,13 @@ export class MenuFormComponent implements OnInit {
     price: [0, [Validators.required, Validators.min(0.01)]],
     category: ['MainCourse' as MenuItemCategory, Validators.required],
     isAvailable: [true],
+    /** null = automática (Barra para bebidas, Cocina para el resto). */
+    stationId: [null as number | null],
+    allergens: [[] as Allergen[]],
   });
 
   ngOnInit(): void {
+    this.stationService.getAll().subscribe({ next: (data) => this.stations.set(data) });
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       const id = Number(idParam);
@@ -48,6 +58,8 @@ export class MenuFormComponent implements OnInit {
             price: item.price,
             category: item.category,
             isAvailable: item.isAvailable,
+            stationId: item.stationId,
+            allergens: item.allergens ?? [],
           }),
         error: (err) => this.error.set(apiErrorMessage(err, 'No se pudo cargar el plato.')),
       });
@@ -78,5 +90,14 @@ export class MenuFormComponent implements OnInit {
         this.saving.set(false);
       },
     });
+  }
+
+  hasAllergen(a: Allergen): boolean {
+    return this.form.controls.allergens.value.includes(a);
+  }
+
+  toggleAllergen(a: Allergen): void {
+    const current = this.form.controls.allergens.value;
+    this.form.controls.allergens.setValue(current.includes(a) ? current.filter((x) => x !== a) : [...current, a]);
   }
 }

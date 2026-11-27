@@ -56,7 +56,7 @@
             </td>
             <td class="fw-semibold text-nowrap">Mesa {{ r.tableNumber }}</td>
             <td class="text-center fw-semibold">{{ r.numberOfPeople }}</td>
-            <td class="d-none d-xl-table-cell">{{ r.totalAmount ? (r.totalAmount | currency) : '—' }}</td>
+            <td class="d-none d-xl-table-cell">{{ r.totalAmount ? (r.totalAmount | money) : '—' }}</td>
             <td><span class="{{ statusBadges[r.status] }}">{{ statusLabels[r.status] }}</span></td>
             <td class="text-end pe-4 text-nowrap">
               @if (isOpen(r)) {

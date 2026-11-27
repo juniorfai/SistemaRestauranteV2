@@ -43,8 +43,18 @@ export class AuthService {
   readonly canManage = computed(() => this.hasRole(MANAGEMENT_ROLES));
   readonly isPlatformAdmin = computed(() => this.user()?.role === 'PlatformAdmin');
 
-  /** Pantalla de inicio según el rol: la plataforma gestiona restaurantes; el resto, reservas. */
-  readonly homeUrl = computed(() => (this.isPlatformAdmin() ? '/restaurantes' : '/reservas'));
+  /**
+   * Pantalla de inicio según el rol: la plataforma, sus restaurantes; el camarero, la sala;
+   * cocina, su pantalla; administrador y encargado, las reservas.
+   */
+  readonly homeUrl = computed(() => {
+    switch (this.user()?.role) {
+      case 'PlatformAdmin': return '/restaurantes';
+      case 'Staff': return '/sala';
+      case 'Kitchen': return '/cuenta'; // la pantalla de cocina llega con el tiempo real
+      default: return '/reservas';
+    }
+  });
 
   /** Token vigente o null si no hay sesión o ya caducó. */
   token(): string | null {

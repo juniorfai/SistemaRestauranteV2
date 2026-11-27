@@ -1,0 +1,143 @@
+<div class="page-header">
+  <div>
+    <h2>Sala</h2>
+    <p>Toca una mesa libre para sentar a los clientes, o una ocupada para ver su cuenta.</p>
+  </div>
+  <button type="button" class="btn btn-outline-secondary" (click)="load(true)" title="Actualizar">
+    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+  </button>
+</div>
+
+<div class="floor-stats mb-3">
+  <span><strong>{{ stats().occupied }}</strong> ocupadas</span>
+  <span><strong>{{ stats().free }}</strong> libres</span>
+  <span><strong>{{ stats().guests }}</strong> comensales</span>
+  @if (stats().ready > 0) {
+    <span class="text-ready"><i class="bi bi-bell-fill me-1"></i><strong>{{ stats().ready }}</strong> platos listos para servir</span>
+  }
+</div>
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+  @if (zones().length > 1) {
+    <div class="segmented" role="group" aria-label="Filtrar por zona">
+      <button type="button" [class.active]="zone() === null" (click)="zone.set(null)">Todas</button>
+      @for (z of zones(); track z) {
+        <button type="button" [class.active]="zone() === z" (click)="zone.set(z)">{{ z }}</button>
+      }
+    </div>
+  }
+  <div class="form-check form-switch ms-auto">
+    <input id="only-mine" class="form-check-input" type="checkbox" [checked]="onlyMine()" (change)="onlyMine.set(!onlyMine())">
+    <label for="only-mine" class="form-check-label small">Solo mis mesas</label>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="error.set(null)"></button>
+  </div>
+}
+
+@if (seating(); as table) {
+  <div class="card mb-4 seat-panel">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <h5 class="fw-bold mb-0">Sentar en la mesa {{ table.tableNumber }}</h5>
+        <button type="button" class="btn-close" aria-label="Cancelar" (click)="seating.set(null)"></button>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-auto">
+          <span class="form-label small d-block">Comensales</span>
+          <div class="stepper" role="group" aria-label="Comensales">
+            <button type="button" class="btn btn-outline-secondary" (click)="changeGuests(-1)" aria-label="Uno menos">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+            <span class="stepper-value">{{ guests() }}</span>
+            <button type="button" class="btn btn-outline-secondary" (click)="changeGuests(1)" aria-label="Uno más">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+          @if (guests() > table.capacity) {
+            <div class="form-text text-warning-emphasis">La mesa es para {{ table.capacity }}.</div>
+          }
+        </div>
+        @if (seatableReservations().length > 0) {
+          <div class="col-md-5">
+            <label for="seat-res" class="form-label small">Reserva <span class="text-muted">(opcional)</span></label>
+            <select id="seat-res" class="form-select" [ngModel]="reservationId()" (ngModelChange)="pickReservation($event)">
+              <option [ngValue]="null">Sin reserva</option>
+              @for (r of seatableReservations(); track r.id) {
+                <option [ngValue]="r.id">
+                  {{ reservationTime(r) }} · {{ r.customerName }} · {{ r.numberOfPeople }} pers. · mesa {{ r.tableNumber }}{{ r.orderedItems.length ? ' · con pedido' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+        <div class="col">
+          <label for="seat-notes" class="form-label small">Nota <span class="text-muted">(opcional)</span></label>
+          <input id="seat-notes" class="form-control" maxlength="500" [ngModel]="notes()" (ngModelChange)="notes.set($event)"
+                 placeholder="Cumpleaños, trona, prisa...">
+        </div>
+        <div class="col-12 col-md-auto">
+          <button type="button" class="btn btn-primary px-4 w-100" [disabled]="opening()" (click)="open()">
+            @if (opening()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Abrir cuenta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="floor-grid">
+  @for (tile of tiles(); track tile.table.id) {
+    <button type="button" class="table-tile"
+            [class.is-free]="!tile.order && tile.table.status !== 'OutOfService'"
+            [class.is-busy]="!!tile.order"
+            [class.is-off]="tile.table.status === 'OutOfService'"
+            [class.has-ready]="(tile.summary?.ready ?? 0) > 0"
+            [disabled]="!tile.order && tile.table.status === 'OutOfService'"
+            (click)="select(tile)">
+      <span class="tile-top">
+        <span class="tile-number">{{ tile.table.tableNumber }}</span>
+        <span class="tile-cap"><i class="bi bi-people-fill me-1"></i>{{ tile.order ? tile.order.guests + '/' : '' }}{{ tile.table.capacity }}</span>
+      </span>
+
+      @if (tile.order; as order) {
+        <span class="tile-line">{{ order.waiterName }} · {{ elapsed(order) }}</span>
+        <span class="tile-total">{{ order.subtotal | money }}</span>
+        <span class="tile-badges">
+          @if (tile.summary!.ready > 0) {
+            <span class="mini-badge badge-ready"><i class="bi bi-bell-fill"></i> {{ tile.summary!.ready }} listo{{ tile.summary!.ready > 1 ? 's' : '' }}</span>
+          }
+          @if (tile.summary!.drafts > 0) {
+            <span class="mini-badge badge-draft">{{ tile.summary!.drafts }} sin enviar</span>
+          }
+          @if (tile.summary!.inKitchen > 0) {
+            <span class="mini-badge badge-kitchen">{{ tile.summary!.inKitchen }} en cocina</span>
+          }
+          @if (tile.summary!.held > 0) {
+            <span class="mini-badge badge-held">{{ tile.summary!.held }} retenido{{ tile.summary!.held > 1 ? 's' : '' }}</span>
+          }
+        </span>
+      } @else if (tile.table.status === 'OutOfService') {
+        <span class="tile-line">Fuera de servicio</span>
+      } @else {
+        <span class="tile-line">Libre{{ tile.table.location ? ' · ' + tile.table.location : '' }}</span>
+        @if (tile.reservation; as r) {
+          <span class="tile-res"><i class="bi bi-calendar-check me-1"></i>{{ reservationTime(r) }} {{ r.customerName }}</span>
+        }
+      }
+    </button>
+  } @empty {
+    <div class="empty-state w-100">
+      @if (loading()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>Cargando la sala...
+      } @else {
+        <i class="bi bi-grid-3x3-gap"></i>No hay mesas{{ onlyMine() ? ' tuyas abiertas' : '' }}.
+      }
+    </div>
+  }
+</div>

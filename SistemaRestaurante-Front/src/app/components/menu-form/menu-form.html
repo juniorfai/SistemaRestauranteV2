@@ -33,6 +33,29 @@
           </select>
         </div>
 
+        <div class="col-md-6">
+          <label for="m-station" class="form-label fw-semibold">Zona que lo prepara</label>
+          <select id="m-station" class="form-select" formControlName="stationId">
+            <option [ngValue]="null">Automática (bebidas a la barra)</option>
+            @for (s of stations(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-12">
+          <span class="form-label fw-semibold d-block">Alérgenos</span>
+          <div class="allergen-grid">
+            @for (a of allergenOptions; track a) {
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [id]="'al-' + a" [checked]="hasAllergen(a)" (change)="toggleAllergen(a)">
+                <label class="form-check-label" [for]="'al-' + a">{{ allergenLabels[a] }}</label>
+              </div>
+            }
+          </div>
+          <div class="form-text">El camarero los ve al tomar el pedido.</div>
+        </div>
+
         <div class="col-12">
           <label for="m-description" class="form-label fw-semibold">Descripción <span class="text-muted">(opcional)</span></label>
           <textarea id="m-description" class="form-control" rows="3" formControlName="description"></textarea>

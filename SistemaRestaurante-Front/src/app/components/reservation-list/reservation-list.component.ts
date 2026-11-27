@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { MoneyPipe } from '../../services/money.service';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReservationResponseDTO } from '../../models/reservation.model';
@@ -21,7 +22,7 @@ const ACTION_CONFIRMATIONS: Record<ReservationAction, string> = {
 @Component({
   selector: 'app-reservation-list',
   standalone: true,
-  imports: [DatePipe, CurrencyPipe, FormsModule, RouterLink],
+  imports: [DatePipe, MoneyPipe, FormsModule, RouterLink],
   templateUrl: './reservation-list.component.html',
 })
 export class ReservationListComponent implements OnInit {

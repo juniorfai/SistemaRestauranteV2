@@ -6,8 +6,8 @@ import { MenuItemResponseDTO } from '../../models/menu.model';
 import { MenuListComponent } from './menu-list';
 
 const ITEMS: MenuItemResponseDTO[] = [
-  { id: 1, name: 'Bruschetta', price: 6.99, category: 'Appetizer', categoryName: 'Appetizer', isAvailable: true, restaurantId: 1 },
-  { id: 2, name: 'Brownie', price: 6.99, category: 'Dessert', categoryName: 'Dessert', isAvailable: true, restaurantId: 1 },
+  { id: 1, name: 'Bruschetta', price: 6.99, category: 'Appetizer', categoryName: 'Appetizer', isAvailable: true, restaurantId: 1, stationId: 1, stationName: 'Cocina', allergens: [] },
+  { id: 2, name: 'Brownie', price: 6.99, category: 'Dessert', categoryName: 'Dessert', isAvailable: true, restaurantId: 1, stationId: 1, stationName: 'Cocina', allergens: [] },
 ];
 
 describe('MenuListComponent', () => {

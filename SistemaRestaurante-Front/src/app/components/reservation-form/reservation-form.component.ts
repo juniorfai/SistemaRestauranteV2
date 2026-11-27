@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { MoneyPipe } from '../../services/money.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CustomerResponseDTO } from '../../models/customer.model';
@@ -16,7 +16,7 @@ import { MENU_CATEGORY_LABELS } from '../../utils/labels';
 @Component({
   selector: 'app-reservation-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe],
+  imports: [ReactiveFormsModule, RouterLink, MoneyPipe],
   templateUrl: './reservation-form.component.html',
 })
 export class ReservationFormComponent implements OnInit {
