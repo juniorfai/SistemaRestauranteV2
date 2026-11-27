@@ -41,7 +41,7 @@ export class LoginComponent {
       next: () => {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         // Solo rutas internas, para no redirigir a otra web.
-        const target = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/reservas';
+        const target = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : this.auth.homeUrl();
         this.router.navigateByUrl(target);
       },
       error: (err) => {

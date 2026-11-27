@@ -1,11 +1,12 @@
 ﻿using SistemaRestaurante.Domain.Enums;
+using SistemaRestaurante.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace SistemaRestaurante.Domain.Entities
 {
-    public class Table : BaseEntity
+    public class Table : BaseEntity, IRestaurantScoped
     {
         public int TableNumber { get; set; }
         public int Capacity { get; set; }

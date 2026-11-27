@@ -22,6 +22,9 @@ interface Session {
 /** Roles que pueden dar de alta, editar y borrar mesas, platos y clientes. */
 export const MANAGEMENT_ROLES: UserRole[] = ['Admin', 'Manager'];
 
+/** Todo el personal de un restaurante (el administrador de la plataforma no trabaja en ninguno). */
+export const RESTAURANT_ROLES: UserRole[] = ['Admin', 'Manager', 'Staff'];
+
 /**
  * Sesión del usuario. El token se guarda en localStorage para que la sesión sobreviva a una
  * recarga de la tableta del restaurante; caduca según lo que diga la API (por defecto 12 h).
@@ -38,6 +41,10 @@ export class AuthService {
   readonly isLoggedIn = computed(() => this.session() !== null);
   readonly isAdmin = computed(() => this.user()?.role === 'Admin');
   readonly canManage = computed(() => this.hasRole(MANAGEMENT_ROLES));
+  readonly isPlatformAdmin = computed(() => this.user()?.role === 'PlatformAdmin');
+
+  /** Pantalla de inicio según el rol: la plataforma gestiona restaurantes; el resto, reservas. */
+  readonly homeUrl = computed(() => (this.isPlatformAdmin() ? '/restaurantes' : '/reservas'));
 
   /** Token vigente o null si no hay sesión o ya caducó. */
   token(): string | null {
@@ -66,6 +73,13 @@ export class AuthService {
   }
 
   /** Cierra la sesión y vuelve a la pantalla de acceso. */
+  /** Tras renombrar el restaurante, para que el menú lateral lo muestre sin volver a entrar. */
+  setRestaurantName(name: string): void {
+    const current = this.session();
+    if (!current) return;
+    this.persist({ ...current, user: { ...current.user, restaurantName: name } });
+  }
+
   logout(returnUrl?: string): void {
     this.clear();
     const queryParams = returnUrl && returnUrl !== '/' ? { returnUrl } : undefined;
@@ -73,7 +87,10 @@ export class AuthService {
   }
 
   private store(response: LoginResponseDTO): void {
-    const session: Session = { token: response.token, expiresAt: response.expiresAt, user: response.user };
+    this.persist({ token: response.token, expiresAt: response.expiresAt, user: response.user });
+  }
+
+  private persist(session: Session): void {
     this.session.set(session);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(session));

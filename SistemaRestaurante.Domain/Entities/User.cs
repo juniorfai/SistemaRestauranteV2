@@ -18,5 +18,9 @@ namespace SistemaRestaurante.Domain.Entities
         public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
 
         public DateTime? LastLoginAt { get; set; }
+
+        /// <summary>Restaurante al que pertenece. Null solo para el administrador de la plataforma.</summary>
+        public int? RestaurantId { get; set; }
+        public Restaurant? Restaurant { get; set; }
     }
 }

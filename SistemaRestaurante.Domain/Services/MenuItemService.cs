@@ -4,21 +4,23 @@ using SistemaRestaurante.Domain.Enums;
 using SistemaRestaurante.Domain.Interfaces.Repositories;
 using SistemaRestaurante.Domain.Interfaces.Services;
 
+using SistemaRestaurante.Domain.Interfaces;
+
 namespace SistemaRestaurante.Domain.Services
 {
     public class MenuItemService : IMenuItemService
     {
         private readonly IMenuItemRepository _menuItemRepository;
-        private readonly IRestaurantRepository _restaurantRepository;
+        private readonly ITenantContext _tenant;
         private readonly ILogger<MenuItemService> _logger;
 
         public MenuItemService(
             IMenuItemRepository menuItemRepository,
-            IRestaurantRepository restaurantRepository,
+            ITenantContext tenant,
             ILogger<MenuItemService> logger)
         {
             _menuItemRepository = menuItemRepository;
-            _restaurantRepository = restaurantRepository;
+            _tenant = tenant;
             _logger = logger;
         }
 
@@ -35,9 +37,10 @@ namespace SistemaRestaurante.Domain.Services
 
         public async Task<MenuItem> CreateAsync(MenuItem item)
         {
-            await ValidateAsync(item);
+            Validate(item);
 
             item.Id = 0;
+            item.RestaurantId = _tenant.RequireRestaurantId();
             item.CreatedAt = DateTime.UtcNow;
             item.IsActive = true;
             _logger.LogInformation("Creating menu item {Name}", item.Name);
@@ -49,14 +52,13 @@ namespace SistemaRestaurante.Domain.Services
             var existing = await _menuItemRepository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"No se encontró el plato con ID {id}");
 
-            await ValidateAsync(item);
+            Validate(item);
 
             existing.Name = item.Name;
             existing.Description = item.Description;
             existing.Price = item.Price;
             existing.Category = item.Category;
             existing.IsAvailable = item.IsAvailable;
-            existing.RestaurantId = item.RestaurantId;
             existing.UpdatedAt = DateTime.UtcNow;
             await _menuItemRepository.UpdateAsync(existing);
         }
@@ -70,13 +72,10 @@ namespace SistemaRestaurante.Domain.Services
             await _menuItemRepository.DeleteAsync(id);
         }
 
-        private async Task ValidateAsync(MenuItem item)
+        private static void Validate(MenuItem item)
         {
             if (item.Price <= 0)
                 throw new ArgumentException("El precio debe ser mayor que cero");
-
-            if (!await _restaurantRepository.ExistsAsync(item.RestaurantId))
-                throw new KeyNotFoundException($"No se encontró el restaurante con ID {item.RestaurantId}");
         }
     }
 }

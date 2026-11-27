@@ -1,4 +1,8 @@
-export type UserRole = 'Admin' | 'Manager' | 'Staff';
+/** PlatformAdmin = quien vende el programa: da de alta restaurantes, no trabaja en ninguno. */
+export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'PlatformAdmin';
+
+/** Roles que puede tener el personal de un restaurante. */
+export type RestaurantRole = Exclude<UserRole, 'PlatformAdmin'>;
 
 export interface UserResponseDTO {
   id: number;
@@ -8,6 +12,9 @@ export interface UserResponseDTO {
   isActive: boolean;
   lastLoginAt?: string | null;
   createdAt: string;
+  /** null para el administrador de la plataforma. */
+  restaurantId?: number | null;
+  restaurantName?: string | null;
 }
 
 export interface LoginRequestDTO {
@@ -25,13 +32,13 @@ export interface LoginResponseDTO {
 export interface UserCreateRequestDTO {
   username: string;
   fullName: string;
-  role: UserRole;
+  role: RestaurantRole;
   password: string;
 }
 
 export interface UserUpdateRequestDTO {
   fullName: string;
-  role: UserRole;
+  role: RestaurantRole;
   isActive: boolean;
 }
 

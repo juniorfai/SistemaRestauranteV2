@@ -1,4 +1,4 @@
-import { UserRole } from '../models/auth.model';
+import { RestaurantRole, UserRole } from '../models/auth.model';
 import { MenuItemCategory } from '../models/menu.model';
 import { ReservationStatus } from '../models/reservation.model';
 import { TableStatus } from '../models/table.model';
@@ -50,15 +50,17 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   Admin: 'Administrador',
   Manager: 'Encargado',
   Staff: 'Camarero / sala',
+  PlatformAdmin: 'Plataforma',
 };
 
-export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+export const ROLE_DESCRIPTIONS: Record<RestaurantRole, string> = {
   Admin: 'Todo, incluido el personal y los datos del restaurante.',
   Manager: 'Reservas, clientes, mesas y carta. No gestiona el personal.',
   Staff: 'Reservas, clientes y estado de las mesas. No borra ni cambia la carta ni las mesas.',
 };
 
-export const ROLES = Object.keys(ROLE_LABELS) as UserRole[];
+/** Roles que se pueden asignar al personal de un restaurante. */
+export const ROLES: RestaurantRole[] = ['Admin', 'Manager', 'Staff'];
 
 /** Fecha local en formato yyyy-MM-dd (para inputs type="date"). */
 export function toDateInputValue(date: Date): string {

@@ -55,12 +55,15 @@ namespace SistemaRestaurante.DataAccess.Migrations
                     b.Property<string>("Preferences")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("RestaurantId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("RestaurantId", "Email")
                         .IsUnique();
 
                     b.ToTable("Customers");
@@ -133,6 +136,9 @@ namespace SistemaRestaurante.DataAccess.Migrations
                     b.Property<DateTime>("ReservationDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("RestaurantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SpecialRequests")
                         .HasColumnType("nvarchar(max)");
 
@@ -155,6 +161,8 @@ namespace SistemaRestaurante.DataAccess.Migrations
 
                     b.HasIndex("TableId");
 
+                    b.HasIndex("RestaurantId", "ReservationDateTime");
+
                     b.ToTable("Reservations");
                 });
 
@@ -170,6 +178,7 @@ namespace SistemaRestaurante.DataAccess.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("ReservationId", "MenuItemId");
@@ -287,6 +296,9 @@ namespace SistemaRestaurante.DataAccess.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("RestaurantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -307,10 +319,21 @@ namespace SistemaRestaurante.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("RestaurantId");
+
                     b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("SistemaRestaurante.Domain.Entities.Customer", b =>
+                {
+                    b.HasOne("SistemaRestaurante.Domain.Entities.Restaurant", null)
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SistemaRestaurante.Domain.Entities.MenuItem", b =>
@@ -330,6 +353,12 @@ namespace SistemaRestaurante.DataAccess.Migrations
                         .WithMany("Reservations")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SistemaRestaurante.Domain.Entities.Restaurant", null)
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("SistemaRestaurante.Domain.Entities.Table", "Table")
@@ -369,6 +398,16 @@ namespace SistemaRestaurante.DataAccess.Migrations
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("SistemaRestaurante.Domain.Entities.User", b =>
+                {
+                    b.HasOne("SistemaRestaurante.Domain.Entities.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Restaurant");
                 });

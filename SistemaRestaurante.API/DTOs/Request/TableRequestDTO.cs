@@ -16,9 +16,6 @@ namespace SistemaRestaurante.API.DTOs.Request
 
         [EnumDataType(typeof(TableStatus), ErrorMessage = "El estado de la mesa no es válido")]
         public TableStatus Status { get; set; } = TableStatus.Available;
-
-        [Range(1, int.MaxValue, ErrorMessage = "El restaurante es obligatorio")]
-        public int RestaurantId { get; set; }
     }
 
     public class TableStatusRequestDTO

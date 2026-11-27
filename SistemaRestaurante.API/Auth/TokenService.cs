@@ -17,6 +17,9 @@ namespace SistemaRestaurante.API.Auth
         /// <summary>Claim con el SecurityStamp del usuario; si cambia, el token deja de valer.</summary>
         public const string StampClaim = "stamp";
 
+        /// <summary>Restaurante del usuario (no existe para el administrador de la plataforma).</summary>
+        public const string RestaurantClaim = "restaurant_id";
+
         private readonly JwtOptions _options;
 
         public TokenService(IOptions<JwtOptions> options)
@@ -37,6 +40,8 @@ namespace SistemaRestaurante.API.Auth
                 new(ClaimTypes.Role, user.Role.ToString()),
                 new(StampClaim, user.SecurityStamp)
             };
+            if (user.RestaurantId is int restaurantId)
+                claims.Add(new Claim(RestaurantClaim, restaurantId.ToString()));
 
             var credentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key)),

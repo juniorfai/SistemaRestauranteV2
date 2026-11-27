@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using SistemaRestaurante.Domain.Entities;
+using SistemaRestaurante.Domain.Interfaces;
 using SistemaRestaurante.Domain.Interfaces.Repositories;
 using SistemaRestaurante.Domain.Interfaces.Services;
 
@@ -9,15 +10,18 @@ namespace SistemaRestaurante.Domain.Services
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IReservationRepository _reservationRepository;
+        private readonly ITenantContext _tenant;
         private readonly ILogger<CustomerService> _logger;
 
         public CustomerService(
             ICustomerRepository customerRepository,
             IReservationRepository reservationRepository,
+            ITenantContext tenant,
             ILogger<CustomerService> logger)
         {
             _customerRepository = customerRepository;
             _reservationRepository = reservationRepository;
+            _tenant = tenant;
             _logger = logger;
         }
 
@@ -39,7 +43,7 @@ namespace SistemaRestaurante.Domain.Services
         {
             customer.Email = NormalizeEmail(customer.Email);
 
-            // El email es único en la base, también para clientes dados de baja.
+            // El email es único en cada restaurante, también para clientes dados de baja.
             var existing = await _customerRepository.GetByEmailIncludingInactiveAsync(customer.Email);
             if (existing != null)
             {
@@ -56,6 +60,7 @@ namespace SistemaRestaurante.Domain.Services
             }
 
             customer.Id = 0;
+            customer.RestaurantId = _tenant.RequireRestaurantId();
             customer.CreatedAt = DateTime.UtcNow;
             customer.IsActive = true;
             _logger.LogInformation("Creating customer {CustomerEmail}", customer.Email);

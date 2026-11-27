@@ -12,6 +12,7 @@ namespace SistemaRestaurante.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize(Roles = Roles.RestaurantStaff)]
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;

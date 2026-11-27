@@ -42,16 +42,6 @@
             }
           </select>
         </div>
-        @if (restaurants().length > 1) {
-          <div class="col-md-3">
-            <label for="t-restaurant" class="form-label small">Restaurante</label>
-            <select id="t-restaurant" class="form-select" formControlName="restaurantId">
-              @for (r of restaurants(); track r.id) {
-                <option [ngValue]="r.id">{{ r.name }}</option>
-              }
-            </select>
-          </div>
-        }
         <div class="col-12 d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-outline-secondary" (click)="closeForm()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid">

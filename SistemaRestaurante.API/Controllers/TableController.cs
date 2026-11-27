@@ -12,6 +12,7 @@ namespace SistemaRestaurante.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [Authorize(Roles = Roles.RestaurantStaff)]
     public class TableController : ControllerBase
     {
         private readonly ITableService _tableService;

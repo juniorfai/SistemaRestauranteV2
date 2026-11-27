@@ -78,4 +78,29 @@ describe('AuthService + authInterceptor', () => {
     expect(fresh.token()).toBeNull();
     http = TestBed.inject(HttpTestingController);
   });
+
+  it('sends the platform admin to the restaurant list and staff to reservations', () => {
+    login();
+    expect(auth.homeUrl()).toBe('/reservas');
+    expect(auth.isPlatformAdmin()).toBe(false);
+
+    auth.login({ username: 'plataforma', password: 'x' }).subscribe();
+    http.expectOne(`${environment.apiUrl}/Auth/login`).flush({
+      ...LOGIN,
+      user: { ...LOGIN.user, role: 'PlatformAdmin', restaurantId: null, restaurantName: null },
+    });
+    expect(auth.isPlatformAdmin()).toBe(true);
+    expect(auth.homeUrl()).toBe('/restaurantes');
+  });
+
+  it('updates the restaurant name in the stored session', () => {
+    auth.login({ username: 'admin', password: 'x' }).subscribe();
+    http.expectOne(`${environment.apiUrl}/Auth/login`).flush({
+      ...LOGIN,
+      user: { ...LOGIN.user, role: 'Admin', restaurantId: 1, restaurantName: 'Antes' },
+    });
+    auth.setRestaurantName('Después');
+    expect(auth.user()?.restaurantName).toBe('Después');
+    expect(JSON.parse(localStorage.getItem('rm-session')!).user.restaurantName).toBe('Después');
+  });
 });

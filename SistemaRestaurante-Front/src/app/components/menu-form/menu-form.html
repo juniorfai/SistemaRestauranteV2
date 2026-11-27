@@ -38,16 +38,6 @@
           <textarea id="m-description" class="form-control" rows="3" formControlName="description"></textarea>
         </div>
 
-        @if (restaurants().length > 1) {
-          <div class="col-12">
-            <label for="m-restaurant" class="form-label fw-semibold">Restaurante</label>
-            <select id="m-restaurant" class="form-select" formControlName="restaurantId">
-              @for (r of restaurants(); track r.id) {
-                <option [ngValue]="r.id">{{ r.name }}</option>
-              }
-            </select>
-          </div>
-        }
 
         <div class="col-12">
           <div class="form-check form-switch">

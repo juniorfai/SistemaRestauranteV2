@@ -1,11 +1,17 @@
 <div class="page-header">
   <div>
     <h2>Personal</h2>
-    <p>Usuarios que pueden entrar en la aplicación y qué puede hacer cada uno.</p>
+    @if (platformMode()) {
+      <p>Personal de todos los restaurantes. Desde aquí solo se puede poner una contraseña nueva; las altas y los roles los gestiona el administrador de cada restaurante.</p>
+    } @else {
+      <p>Usuarios que pueden entrar en la aplicación y qué puede hacer cada uno.</p>
+    }
   </div>
-  <button type="button" class="btn btn-primary px-4" (click)="openNew()">
-    <i class="bi bi-person-plus me-2"></i>Nuevo usuario
-  </button>
+  @if (!platformMode()) {
+    <button type="button" class="btn btn-primary px-4" (click)="openNew()">
+      <i class="bi bi-person-plus me-2"></i>Nuevo usuario
+    </button>
+  }
 </div>
 
 @if (notice()) {
@@ -107,6 +113,7 @@
       <thead>
         <tr>
           <th class="ps-4">Nombre</th>
+          @if (platformMode()) { <th>Restaurante</th> }
           <th>Usuario</th>
           <th>Rol</th>
           <th>Estado</th>
@@ -121,6 +128,7 @@
               {{ u.fullName }}
               @if (isSelf(u)) { <span class="small text-muted fw-normal">(tú)</span> }
             </td>
+            @if (platformMode()) { <td class="text-nowrap">{{ u.restaurantName ?? '—' }}</td> }
             <td class="text-nowrap">{{ u.username }}</td>
             <td><span class="tag">{{ roleLabels[u.role] }}</span></td>
             <td>
@@ -132,10 +140,12 @@
               {{ u.lastLoginAt ? (asUtc(u.lastLoginAt) | date: 'dd/MM HH:mm' : undefined : 'es') : 'Nunca' }}
             </td>
             <td class="text-end pe-4 text-nowrap">
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" aria-label="Editar"
-                      (click)="openEdit(u)">
-                <i class="bi bi-pencil"></i>
-              </button>
+              @if (!platformMode()) {
+                <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Editar" aria-label="Editar"
+                        (click)="openEdit(u)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              }
               <button type="button" class="btn btn-sm btn-outline-secondary" title="Nueva contraseña"
                       aria-label="Poner nueva contraseña" (click)="openPassword(u)">
                 <i class="bi bi-key"></i>
@@ -144,7 +154,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6">
+            <td [attr.colspan]="platformMode() ? 7 : 6">
               <div class="empty-state">
                 @if (loading()) {
                   <span class="spinner-border spinner-border-sm me-2"></span>Cargando usuarios...

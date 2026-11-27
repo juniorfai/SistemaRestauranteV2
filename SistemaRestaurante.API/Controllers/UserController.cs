@@ -9,11 +9,14 @@ using SistemaRestaurante.Domain.Interfaces.Services;
 
 namespace SistemaRestaurante.API.Controllers
 {
-    /// <summary>Gestión de usuarios del personal. Solo administradores.</summary>
+    /// <summary>
+    /// Personal. El administrador de cada restaurante gestiona el suyo; el de la plataforma
+    /// puede ver todos los usuarios y ponerles una contraseña nueva (soporte).
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Roles = Roles.Admin + "," + Roles.PlatformAdmin)]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -41,6 +44,7 @@ namespace SistemaRestaurante.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<ActionResult<UserResponseDTO>> Create(UserCreateRequestDTO dto)
         {
             var user = await _userService.CreateAsync(dto.Username, dto.FullName, dto.Role!.Value, dto.Password);
@@ -50,6 +54,7 @@ namespace SistemaRestaurante.API.Controllers
 
         /// <summary>Cambia nombre, rol o estado. Para dar de baja, enviar isActive = false.</summary>
         [HttpPut("{id:int}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> Update(int id, UserUpdateRequestDTO dto)
         {
             await _userService.UpdateAsync(id, dto.FullName, dto.Role!.Value, dto.IsActive, User.GetUserId());

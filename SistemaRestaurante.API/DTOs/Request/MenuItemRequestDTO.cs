@@ -19,8 +19,5 @@ namespace SistemaRestaurante.API.DTOs.Request
         public MenuItemCategory Category { get; set; }
 
         public bool IsAvailable { get; set; } = true;
-
-        [Range(1, int.MaxValue, ErrorMessage = "El restaurante es obligatorio")]
-        public int RestaurantId { get; set; }
     }
 }

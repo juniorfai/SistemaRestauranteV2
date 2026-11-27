@@ -11,6 +11,8 @@ namespace SistemaRestaurante.API.DTOs.Response
         public bool IsActive { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? RestaurantId { get; set; }
+        public string? RestaurantName { get; set; }
     }
 
     public class LoginResponseDTO
